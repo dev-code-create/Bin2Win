@@ -4,7 +4,7 @@
 
 Develop a waste management incentive system for Simhastha 2028 that rewards devotees with Green Credit points for proper waste disposal, which can be redeemed for religious items and gifts. There will be user login and admin login two accounts
 
----🎯 Purpose
+------🎯 Purpose
 
 Encourage people to throw waste properly at collection booths.
 
