@@ -3,8 +3,8 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import LoadingSpinner from './LoadingSpinner';
 
-const ProtectedRoute = ({ children }) => {
-  const { user, isLoading } = useAuth();
+const ProtectedRoute = ({ children, adminOnly = false }) => {
+  const { user, isLoading, userType } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -16,8 +16,19 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (!user) {
-    // Redirect to login page with return url
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    // Redirect to appropriate login page
+    const loginPath = adminOnly ? "/admin/login" : "/login";
+    return <Navigate to={loginPath} state={{ from: location }} replace />;
+  }
+
+  // Check admin access for admin-only routes
+  if (adminOnly && userType !== 'admin') {
+    return <Navigate to="/admin/login" state={{ from: location }} replace />;
+  }
+
+  // Check user access for user-only routes (prevent admin from accessing user routes)
+  if (!adminOnly && userType === 'admin') {
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   return <>{children}</>;

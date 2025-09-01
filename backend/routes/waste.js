@@ -22,4 +22,9 @@ router.get('/submissions/:submissionId', authenticateUser, WasteController.getSu
 router.put('/submissions/:submissionId/approve', authenticateAdmin, WasteController.approveSubmission);
 router.put('/submissions/:submissionId/reject', authenticateAdmin, WasteController.rejectSubmission);
 
+// Admin waste collection workflow
+router.post('/admin/scan-user', authenticateAdmin, WasteController.scanUserQR);
+router.post('/admin/submit-waste', authenticateAdmin, WasteController.adminSubmitWaste);
+router.get('/admin/collections', authenticateAdmin, WasteController.getAdminCollections);
+
 export default router;

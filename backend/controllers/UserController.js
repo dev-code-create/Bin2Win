@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import WasteSubmission from '../models/WasteSubmission.js';
 import Transaction from '../models/Transaction.js';
 import CollectionBooth from '../models/CollectionBooth.js';
+import QRCodeGenerator from '../utils/qrCodeGenerator.js';
 import mongoose from 'mongoose';
 
 class UserController {
@@ -574,6 +575,173 @@ class UserController {
       res.status(500).json({
         success: false,
         message: 'Failed to update preferences'
+      });
+    }
+  }
+
+  // Get user QR code data
+  async getUserQRCode(req, res) {
+    try {
+      const userId = req.user.userId;
+
+      const user = await User.findById(userId).select('-password');
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      // Generate QR code data with additional metadata
+      const qrData = QRCodeGenerator.generateQRData(user);
+
+      res.json({
+        success: true,
+        data: {
+          qrCode: user.qrCode,
+          qrData: qrData.displayData,
+          structuredData: qrData.structuredData,
+          instructions: {
+            title: 'Your Simhastha 2028 QR Code',
+            description: 'Show this QR code to booth operators for waste collection',
+            steps: [
+              'Visit any Simhastha waste collection booth',
+              'Show this QR code to the booth operator',
+              'The operator will scan your code and weigh your waste',
+              'Green credits will be automatically added to your account'
+            ]
+          }
+        }
+      });
+    } catch (error) {
+      console.error('❌ Get user QR code error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get QR code'
+      });
+    }
+  }
+
+  // Regenerate user QR code (in case of security concerns)
+  async regenerateQRCode(req, res) {
+    try {
+      const userId = req.user.userId;
+
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      // Generate new QR code
+      const newQRCode = QRCodeGenerator.generateUserQRCode(user._id, user.username);
+      
+      // Update user with new QR code
+      user.qrCode = newQRCode;
+      user.lastActive = new Date();
+      await user.save();
+
+      // Generate new QR data
+      const qrData = QRCodeGenerator.generateQRData(user);
+
+      res.json({
+        success: true,
+        message: 'QR code regenerated successfully',
+        data: {
+          qrCode: newQRCode,
+          qrData: qrData.displayData,
+          structuredData: qrData.structuredData,
+          warning: 'Your old QR code is no longer valid. Please use this new QR code for future waste submissions.'
+        }
+      });
+    } catch (error) {
+      console.error('❌ Regenerate QR code error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to regenerate QR code'
+      });
+    }
+  }
+
+  // Get user's activity timeline
+  async getUserActivity(req, res) {
+    try {
+      const userId = req.user.userId;
+      const { page = 1, limit = 20 } = req.query;
+
+      // Get recent waste submissions
+      const submissions = await WasteSubmission.find({ userId })
+        .populate('boothId', 'name location')
+        .populate('verifiedBy', 'fullName role')
+        .sort({ createdAt: -1 })
+        .limit(limit * 1)
+        .skip((page - 1) * limit);
+
+      // Get recent transactions
+      const transactions = await Transaction.find({ userId })
+        .populate('relatedSubmission', 'wasteType quantity')
+        .populate('relatedReward', 'name category')
+        .sort({ createdAt: -1 })
+        .limit(limit * 1)
+        .skip((page - 1) * limit);
+
+      // Combine and sort by date
+      const activities = [];
+
+      submissions.forEach(submission => {
+        activities.push({
+          type: 'waste_submission',
+          id: submission._id,
+          date: submission.createdAt,
+          data: {
+            wasteType: submission.wasteType,
+            quantity: submission.quantity,
+            pointsEarned: submission.pointsEarned,
+            status: submission.status,
+            booth: submission.boothId,
+            collectionMethod: submission.metadata?.submissionMethod || 'user_submission',
+            collectedBy: submission.metadata?.collectedBy || 'Self'
+          }
+        });
+      });
+
+      transactions.forEach(transaction => {
+        activities.push({
+          type: 'transaction',
+          id: transaction._id,
+          date: transaction.createdAt,
+          data: {
+            type: transaction.type,
+            amount: transaction.amount,
+            description: transaction.description,
+            status: transaction.status,
+            relatedSubmission: transaction.relatedSubmission,
+            relatedReward: transaction.relatedReward
+          }
+        });
+      });
+
+      // Sort by date (newest first)
+      activities.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      res.json({
+        success: true,
+        data: {
+          activities: activities.slice(0, limit),
+          pagination: {
+            current: parseInt(page),
+            limit: parseInt(limit),
+            total: activities.length
+          }
+        }
+      });
+    } catch (error) {
+      console.error('❌ Get user activity error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get user activity'
       });
     }
   }

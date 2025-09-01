@@ -1,9 +1,4 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-} from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import apiService from "../services/api";
 import { toast } from "react-toastify";
 
@@ -13,6 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [userType, setUserType] = useState("user"); // 'user' or 'admin'
 
   // Initialize auth state from localStorage
   useEffect(() => {
@@ -20,10 +16,12 @@ export const AuthProvider = ({ children }) => {
       try {
         const storedToken = localStorage.getItem("authToken");
         const storedUser = localStorage.getItem("userData");
+        const storedUserType = localStorage.getItem("userType") || "user";
 
         if (storedToken && storedUser) {
           setToken(storedToken);
           setUser(JSON.parse(storedUser));
+          setUserType(storedUserType);
 
           // Verify token with backend
           try {
@@ -54,11 +52,17 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
-  const login = (userData, authToken) => {
+  const login = (userData, authToken, type = "user") => {
     setUser(userData);
     setToken(authToken);
+    setUserType(type);
     localStorage.setItem("authToken", authToken);
     localStorage.setItem("userData", JSON.stringify(userData));
+    localStorage.setItem("userType", type);
+  };
+
+  const loginAdmin = (adminData, authToken) => {
+    login(adminData, authToken, "admin");
   };
 
   const loginWithCredentials = async (username, password) => {
@@ -66,7 +70,7 @@ export const AuthProvider = ({ children }) => {
       const response = await apiService.login(username, password);
       if (response.success) {
         const { user: userData, authToken } = response.data;
-        
+
         // Store auth data
         login(userData, authToken);
         toast.success("Login successful!");
@@ -86,7 +90,7 @@ export const AuthProvider = ({ children }) => {
       const response = await apiService.register(userData);
       if (response.success) {
         const { user: newUser, authToken } = response.data;
-        
+
         // Store auth data
         login(newUser, authToken);
         toast.success(
@@ -113,8 +117,10 @@ export const AuthProvider = ({ children }) => {
       // Clear local state regardless of API call result
       setUser(null);
       setToken(null);
+      setUserType("user");
       localStorage.removeItem("authToken");
       localStorage.removeItem("userData");
+      localStorage.removeItem("userType");
       localStorage.removeItem("refreshToken");
 
       toast.info("Logged out successfully");
@@ -270,7 +276,9 @@ export const AuthProvider = ({ children }) => {
     user,
     token,
     isLoading,
+    userType,
     login,
+    loginAdmin,
     loginWithCredentials,
     register,
     logout,

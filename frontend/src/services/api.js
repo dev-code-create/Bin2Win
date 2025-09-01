@@ -95,8 +95,22 @@ class ApiService {
       password,
     });
     
-    if (response.success && response.data.authToken) {
-      localStorage.setItem("authToken", response.data.authToken);
+    if (response.success && response.data.token) {
+      localStorage.setItem("authToken", response.data.token);
+    }
+    
+    return response;
+  }
+
+  async adminLogin(username, password) {
+    const response = await this.request("POST", "/auth/admin/login", {
+      login: username,
+      password,
+    });
+    
+    if (response.success && response.data.token) {
+      localStorage.setItem("authToken", response.data.token);
+      localStorage.setItem("userType", "admin");
     }
     
     return response;

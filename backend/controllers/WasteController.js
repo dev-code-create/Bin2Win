@@ -696,6 +696,395 @@ class WasteController {
     }
   }
 
+  // Admin: Scan user QR code and validate user
+  async scanUserQR(req, res) {
+    try {
+      const { userQRCode } = req.body;
+      const adminId = req.user.adminId;
+
+      if (!userQRCode) {
+        return res.status(400).json({
+          success: false,
+          message: 'User QR code is required'
+        });
+      }
+
+      // Find user by QR code
+      const user = await User.findOne({ 
+        qrCode: userQRCode,
+        isActive: true 
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'Invalid user QR code or user not found'
+        });
+      }
+
+      // Get admin's booth information
+      const admin = await Admin.findById(adminId).populate('assignedBooths');
+      if (!admin || !admin.assignedBooths || admin.assignedBooths.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Admin has no assigned booths'
+        });
+      }
+
+      // For this example, use the first assigned booth
+      const booth = admin.assignedBooths[0];
+
+      res.json({
+        success: true,
+        message: 'User QR code validated successfully',
+        data: {
+          user: {
+            id: user._id,
+            name: user.name,
+            username: user.username,
+            greenCredits: user.greenCredits,
+            totalWasteSubmitted: user.totalWasteSubmitted,
+            currentRank: user.currentRank
+          },
+          booth: {
+            id: booth._id,
+            name: booth.name,
+            location: booth.location,
+            acceptedWasteTypes: booth.acceptedWasteTypes
+          },
+          admin: {
+            id: admin._id,
+            name: admin.fullName,
+            role: admin.role
+          }
+        }
+      });
+    } catch (error) {
+      console.error('❌ Scan user QR error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to scan user QR code'
+      });
+    }
+  }
+
+  // Admin: Submit waste collection on behalf of user
+  async adminSubmitWaste(req, res) {
+    try {
+      const {
+        userId,
+        boothId,
+        wasteType,
+        quantity,
+        notes
+      } = req.body;
+      const adminId = req.user.adminId;
+
+      // Validate required fields
+      if (!userId || !boothId || !wasteType || !quantity) {
+        return res.status(400).json({
+          success: false,
+          message: 'User ID, booth ID, waste type, and quantity are required'
+        });
+      }
+
+      // Validate quantity
+      if (quantity <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Quantity must be greater than 0'
+        });
+      }
+
+      // Verify user exists and is active
+      const user = await User.findById(userId);
+      if (!user || !user.isActive) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found or inactive'
+        });
+      }
+
+      // Verify booth exists and admin has access
+      const admin = await Admin.findById(adminId).populate('assignedBooths');
+      const booth = await CollectionBooth.findById(boothId);
+      
+      if (!booth || !booth.isActive || booth.status !== 'operational') {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or inactive booth'
+        });
+      }
+
+      // Check if admin has access to this booth
+      const hasBoothAccess = admin.assignedBooths.some(
+        assignedBooth => assignedBooth._id.toString() === boothId
+      ) || admin.role === 'super_admin';
+
+      if (!hasBoothAccess) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. You are not assigned to this booth.'
+        });
+      }
+
+      // Check if booth accepts this waste type
+      if (!booth.acceptedWasteTypes.includes(wasteType)) {
+        return res.status(400).json({
+          success: false,
+          message: `This booth does not accept ${wasteType}. Accepted types: ${booth.acceptedWasteTypes.join(', ')}`
+        });
+      }
+
+      // Calculate points
+      const pointsEarned = WasteSubmission.calculatePoints(wasteType, quantity);
+
+      // Generate unique submission ID
+      const submissionQR = `ADMIN_WASTE_${Date.now()}_${userId}_${adminId}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Start transaction for data consistency
+      const session = await mongoose.startSession();
+      session.startTransaction();
+
+      try {
+        // Create waste submission (auto-approved since admin submitted)
+        const submission = new WasteSubmission({
+          userId,
+          boothId,
+          wasteType,
+          quantity: parseFloat(quantity),
+          pointsEarned,
+          qrCode: submissionQR,
+          description: `Admin collected waste - ${notes || ''}`,
+          status: 'approved', // Auto-approve admin submissions
+          verifiedBy: adminId,
+          verificationDate: new Date(),
+          notes: notes || '',
+          metadata: {
+            submissionMethod: 'admin_collection',
+            collectedBy: admin.fullName,
+            collectionDate: new Date(),
+            boothName: booth.name
+          }
+        });
+
+        await submission.save({ session });
+
+        // Update user's green credits and total waste
+        await User.findByIdAndUpdate(
+          userId,
+          {
+            $inc: {
+              greenCredits: pointsEarned,
+              totalWasteSubmitted: quantity
+            },
+            lastActive: new Date()
+          },
+          { session }
+        );
+
+        // Update booth capacity
+        await CollectionBooth.findByIdAndUpdate(
+          boothId,
+          {
+            $inc: { currentCapacity: quantity }
+          },
+          { session }
+        );
+
+        // Create transaction record
+        const transaction = new Transaction({
+          userId,
+          type: 'earned',
+          amount: pointsEarned,
+          description: `Green credits earned for ${wasteType} disposal (Admin collected)`,
+          status: 'completed', // Auto-complete admin submissions
+          relatedSubmission: submission._id,
+          metadata: {
+            wasteType,
+            quantity,
+            boothId: booth._id,
+            boothName: booth.name,
+            collectedBy: admin.fullName,
+            collectionMethod: 'admin_scan'
+          }
+        });
+
+        await transaction.save({ session });
+
+        await session.commitTransaction();
+
+        // Get updated user data
+        const updatedUser = await User.findById(userId);
+
+        res.json({
+          success: true,
+          message: 'Waste collection recorded successfully! Credits have been added to user account.',
+          data: {
+            submission: {
+              id: submission._id,
+              wasteType: submission.wasteType,
+              quantity: submission.quantity,
+              pointsEarned: submission.pointsEarned,
+              status: submission.status,
+              collectedAt: submission.createdAt,
+              collectedBy: admin.fullName
+            },
+            user: {
+              id: updatedUser._id,
+              name: updatedUser.name,
+              newCreditsBalance: updatedUser.greenCredits,
+              creditsEarned: pointsEarned,
+              totalWasteSubmitted: updatedUser.totalWasteSubmitted
+            },
+            transaction: {
+              id: transaction._id,
+              type: transaction.type,
+              amount: transaction.amount,
+              status: transaction.status
+            }
+          }
+        });
+
+      } catch (error) {
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        session.endSession();
+      }
+
+    } catch (error) {
+      console.error('❌ Admin submit waste error:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to submit waste collection'
+      });
+    }
+  }
+
+  // Admin: Get recent collections for the booth
+  async getAdminCollections(req, res) {
+    try {
+      const adminId = req.user.adminId;
+      const { 
+        page = 1, 
+        limit = 20, 
+        boothId,
+        startDate,
+        endDate
+      } = req.query;
+
+      // Get admin's assigned booths
+      const admin = await Admin.findById(adminId).populate('assignedBooths');
+      if (!admin) {
+        return res.status(404).json({
+          success: false,
+          message: 'Admin not found'
+        });
+      }
+
+      let boothFilter = {};
+      if (boothId) {
+        // Check if admin has access to specified booth
+        const hasAccess = admin.assignedBooths.some(
+          booth => booth._id.toString() === boothId
+        ) || admin.role === 'super_admin';
+
+        if (!hasAccess) {
+          return res.status(403).json({
+            success: false,
+            message: 'Access denied to this booth'
+          });
+        }
+
+        boothFilter.boothId = boothId;
+      } else {
+        // Get submissions from all assigned booths
+        const boothIds = admin.assignedBooths.map(booth => booth._id);
+        boothFilter.boothId = { $in: boothIds };
+      }
+
+      // Build filter
+      const filter = {
+        ...boothFilter,
+        verifiedBy: adminId,
+        'metadata.submissionMethod': 'admin_collection'
+      };
+
+      if (startDate || endDate) {
+        filter.createdAt = {};
+        if (startDate) filter.createdAt.$gte = new Date(startDate);
+        if (endDate) filter.createdAt.$lte = new Date(endDate);
+      }
+
+      // Get submissions with pagination
+      const submissions = await WasteSubmission.find(filter)
+        .populate('userId', 'name username')
+        .populate('boothId', 'name location')
+        .sort({ createdAt: -1 })
+        .limit(limit * 1)
+        .skip((page - 1) * limit);
+
+      // Get total count
+      const total = await WasteSubmission.countDocuments(filter);
+
+      // Calculate summary stats
+      const summaryStats = await WasteSubmission.aggregate([
+        { $match: filter },
+        {
+          $group: {
+            _id: null,
+            totalCollections: { $sum: 1 },
+            totalWeight: { $sum: '$quantity' },
+            totalPointsAwarded: { $sum: '$pointsEarned' },
+            wasteTypeBreakdown: {
+              $push: {
+                type: '$wasteType',
+                quantity: '$quantity'
+              }
+            }
+          }
+        }
+      ]);
+
+      const summary = summaryStats[0] || {
+        totalCollections: 0,
+        totalWeight: 0,
+        totalPointsAwarded: 0,
+        wasteTypeBreakdown: []
+      };
+
+      res.json({
+        success: true,
+        data: {
+          collections: submissions.map(submission => ({
+            id: submission._id,
+            user: submission.userId,
+            booth: submission.boothId,
+            wasteType: submission.wasteType,
+            quantity: submission.quantity,
+            pointsEarned: submission.pointsEarned,
+            collectedAt: submission.createdAt,
+            notes: submission.notes
+          })),
+          summary,
+          pagination: {
+            current: parseInt(page),
+            pages: Math.ceil(total / limit),
+            total,
+            limit: parseInt(limit)
+          }
+        }
+      });
+    } catch (error) {
+      console.error('❌ Get admin collections error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get collection history'
+      });
+    }
+  }
+
   // Get multer middleware for photo uploads
   getUploadMiddleware() {
     return this.upload.array('photos', 5);

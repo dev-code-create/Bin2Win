@@ -13,7 +13,10 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 // Pages
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
+import UserLoginPage from './pages/UserLoginPage';
+import AdminLoginPage from './pages/AdminLoginPage';
 import DashboardPage from './pages/DashboardPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
 import WasteSubmissionPage from './pages/WasteSubmissionPage';
 import RewardStorePage from './pages/RewardStorePage';
 import BoothLocatorPage from './pages/BoothLocatorPage';
@@ -38,9 +41,13 @@ function App() {
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={<LoginPage />} />
+              <Route path="/login" element={<UserLoginPage />} />
+              <Route path="/admin/login" element={<AdminLoginPage />} />
+              
+              {/* Legacy route redirect */}
+              <Route path="/old-login" element={<LoginPage />} />
 
-              {/* Protected Routes */}
+              {/* Protected Routes - User Dashboard */}
               <Route
                 path="/dashboard"
                 element={
@@ -48,6 +55,16 @@ function App() {
                     <Layout>
                       <DashboardPage />
                     </Layout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Admin Dashboard */}
+              <Route
+                path="/admin/dashboard"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <AdminDashboardPage />
                   </ProtectedRoute>
                 }
               />

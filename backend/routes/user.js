@@ -20,5 +20,10 @@ router.get('/statistics', UserController.getStatistics);
 // History and transactions
 router.get('/waste-history', UserController.getWasteHistory);
 router.get('/transaction-history', UserController.getTransactionHistory);
+router.get('/activity', UserController.getUserActivity);
+
+// QR Code management
+router.get('/qr-code', UserController.getUserQRCode);
+router.post('/qr-code/regenerate', UserController.regenerateQRCode);
 
 export default router;
