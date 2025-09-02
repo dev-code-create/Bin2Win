@@ -276,6 +276,99 @@ const DashboardPage = () => {
         </Col>
       </Row>
 
+      {/* Sponsors Section */}
+      <Row className="mb-4">
+        <Col>
+          <Card className="border-0 shadow-sm">
+            <Card.Header
+              className="bg-gradient text-white"
+              style={{
+                background: "linear-gradient(135deg, #28a745 0%, #20c997 100%)",
+              }}
+            >
+              <h5 className="mb-0 text-center">
+                <FaLeaf className="me-2" />
+                Our Proud Sponsors
+              </h5>
+            </Card.Header>
+            <Card.Body className="p-4">
+              <div className="text-center mb-3">
+                <p className="text-muted mb-0">
+                  These organizations are committed to making Simhastha 2028 a
+                  Clean & Green event
+                </p>
+              </div>
+              <Row className="g-4 justify-content-center">
+                <Col xs={6} sm={4} md={3} lg={2}>
+                  <div className="text-center">
+                    <img
+                      src="/sponsors/bisleri.svg"
+                      alt="Bisleri"
+                      className="img-fluid mb-2"
+                      style={{
+                        maxHeight: "80px",
+                        filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
+                      }}
+                    />
+                    <small className="text-muted d-block">Bisleri</small>
+                  </div>
+                </Col>
+                <Col xs={6} sm={4} md={3} lg={2}>
+                  <div className="text-center">
+                    <img
+                      src="/sponsors/hindustan-unilever.svg"
+                      alt="Hindustan Unilever Limited"
+                      className="img-fluid mb-2"
+                      style={{
+                        maxHeight: "80px",
+                        filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
+                      }}
+                    />
+                    <small className="text-muted d-block">
+                      Hindustan Unilever
+                    </small>
+                  </div>
+                </Col>
+                <Col xs={6} sm={4} md={3} lg={2}>
+                  <div className="text-center">
+                    <img
+                      src="/sponsors/indianoil.jpg"
+                      alt="Clean & Green Initiative"
+                      className="img-fluid mb-2"
+                      style={{
+                        maxHeight: "80px",
+                        filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
+                      }}
+                    />
+                    <small className="text-muted d-block">Clean & Green</small>
+                  </div>
+                </Col>
+                <Col xs={6} sm={4} md={3} lg={2}>
+                  <div className="text-center">
+                    <img
+                      src="/sponsors/patanjali.webp"
+                      alt="IndianOil"
+                      className="img-fluid mb-2"
+                      style={{
+                        maxHeight: "80px",
+                        filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
+                      }}
+                    />
+                    <small className="text-muted d-block">IndianOil</small>
+                  </div>
+                </Col>
+              </Row>
+              <div className="text-center mt-4">
+                <Button variant="outline-success" size="sm">
+                  <FaLeaf className="me-2" />
+                  Learn More About Our Partners
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
       {/* Stats Cards */}
       <Row className="mb-4">
         <Col md={3} sm={6} className="mb-3">

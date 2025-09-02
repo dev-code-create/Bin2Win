@@ -1,0 +1,8 @@
+<svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="100" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+  <circle cx="100" cy="40" r="25" fill="#fd7e14" stroke="#dc3545" stroke-width="3"/>
+  <rect x="75" y="35" width="50" height="10" fill="#007bff"/>
+  <text x="100" y="55" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#007bff">IndianOil</text>
+  <text x="100" y="70" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#6c757d">1958-PRESENT</text>
+  <text x="100" y="85" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#6c757d">Official Sponsor</text>
+</svg>

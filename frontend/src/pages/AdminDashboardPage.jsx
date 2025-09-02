@@ -53,7 +53,7 @@ const AdminDashboardPage = () => {
     { value: "textile", label: "Textile", points: 7, icon: "👕" },
   ];
 
-    // Handle QR scan from the scanner component
+  // Handle QR scan from the scanner component
   const handleQRScan = async (qrCode) => {
     if (!qrCode.trim()) {
       toast.error("Invalid QR code");
@@ -80,7 +80,7 @@ const AdminDashboardPage = () => {
           totalWasteSubmitted: response.data.user.totalWasteSubmitted,
           qrCode: qrCode,
           booth: response.data.booth,
-          admin: response.data.admin
+          admin: response.data.admin,
         };
 
         setScannedUser(userData);
@@ -121,11 +121,11 @@ const AdminDashboardPage = () => {
         userId: scannedUser.id,
         userName: scannedUser.name,
         username: scannedUser.username,
-        boothId: scannedUser.booth?._id || 'demo-booth-001',
+        boothId: scannedUser.booth?._id || "demo-booth-001",
         wasteType: collectionForm.wasteType,
         quantity: quantity,
         notes: collectionForm.notes,
-        qrCode: scannedUser.qrCode
+        qrCode: scannedUser.qrCode,
       };
 
       console.log("Submitting waste collection:", submissionData);
@@ -133,10 +133,11 @@ const AdminDashboardPage = () => {
 
       if (response.success) {
         // Get points earned from response
-        const pointsEarned = response.data.user.creditsEarned || 
-                            response.data.submission.pointsEarned || 
-                            (quantity * selectedWasteType.points);
-        
+        const pointsEarned =
+          response.data.user.creditsEarned ||
+          response.data.submission.pointsEarned ||
+          quantity * selectedWasteType.points;
+
         toast.success(
           `✅ Collection Recorded!\n` +
             `User: ${scannedUser.name}\n` +
@@ -144,9 +145,11 @@ const AdminDashboardPage = () => {
         );
 
         // Update scanned user's credits for display
-        setScannedUser(prev => ({
+        setScannedUser((prev) => ({
           ...prev,
-          greenCredits: response.data.user.newCreditsBalance || (prev.greenCredits + pointsEarned)
+          greenCredits:
+            response.data.user.newCreditsBalance ||
+            prev.greenCredits + pointsEarned,
         }));
 
         // Reset form after a short delay to show updated credits
@@ -158,7 +161,9 @@ const AdminDashboardPage = () => {
         throw new Error(response.message || "Failed to record collection");
       }
     } catch (error) {
-      toast.error(error.message || "Failed to record collection. Please try again.");
+      toast.error(
+        error.message || "Failed to record collection. Please try again."
+      );
       console.error("Collection submission error:", error);
     } finally {
       setIsLoading(false);
@@ -292,6 +297,104 @@ const AdminDashboardPage = () => {
                     <Badge bg="secondary">{type.points} pts/kg</Badge>
                   </div>
                 ))}
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      </Container>
+
+      {/* Sponsors Section */}
+      <Container className="py-4">
+        <Row>
+          <Col>
+            <Card className="border-0 shadow-sm">
+              <Card.Header
+                className="bg-gradient text-white"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #28a745 0%, #20c997 100%)",
+                }}
+              >
+                <h5 className="mb-0 text-center">
+                  <FaRecycle className="me-2" />
+                  Our Proud Sponsors
+                </h5>
+              </Card.Header>
+              <Card.Body className="p-4">
+                <div className="text-center mb-3">
+                  <p className="text-muted mb-0">
+                    These organizations are committed to making Simhastha 2028 a
+                    Clean & Green event
+                  </p>
+                </div>
+                <Row className="g-4 justify-content-center">
+                  <Col xs={6} sm={4} md={3} lg={2}>
+                    <div className="text-center">
+                      <img
+                        src="/sponsors/bisleri.svg"
+                        alt="Bisleri"
+                        className="img-fluid mb-2"
+                        style={{
+                          maxHeight: "80px",
+                          filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
+                        }}
+                      />
+                      <small className="text-muted d-block">Bisleri</small>
+                    </div>
+                  </Col>
+                  <Col xs={6} sm={4} md={3} lg={2}>
+                    <div className="text-center">
+                      <img
+                        src="/sponsors/hindustan-unilever.svg"
+                        alt="Hindustan Unilever Limited"
+                        className="img-fluid mb-2"
+                        style={{
+                          maxHeight: "80px",
+                          filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
+                        }}
+                      />
+                      <small className="text-muted d-block">
+                        Hindustan Unilever
+                      </small>
+                    </div>
+                  </Col>
+                  <Col xs={6} sm={4} md={3} lg={2}>
+                    <div className="text-center">
+                      <img
+                        src="/sponsors/indianoil.jpg"
+                        alt="Clean & Green Initiative"
+                        className="img-fluid mb-2"
+                        style={{
+                          maxHeight: "80px",
+                          filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
+                        }}
+                      />
+                      <small className="text-muted d-block">
+                        Clean & Green
+                      </small>
+                    </div>
+                  </Col>
+                  <Col xs={6} sm={4} md={3} lg={2}>
+                    <div className="text-center">
+                      <img
+                        src="/sponsors/patanjali.webp"
+                        alt="IndianOil"
+                        className="img-fluid mb-2"
+                        style={{
+                          maxHeight: "80px",
+                          filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
+                        }}
+                      />
+                      <small className="text-muted d-block">IndianOil</small>
+                    </div>
+                  </Col>
+                </Row>
+                <div className="text-center mt-4">
+                  <Button variant="outline-success" size="sm">
+                    <FaRecycle className="me-2" />
+                    Learn More About Our Partners
+                  </Button>
+                </div>
               </Card.Body>
             </Card>
           </Col>

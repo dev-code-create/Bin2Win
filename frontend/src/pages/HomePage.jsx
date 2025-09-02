@@ -10,10 +10,14 @@ import {
   FaUsers,
 } from "react-icons/fa";
 import { useAuth } from "../contexts/AuthContext";
+import SponsorTest from "../components/SponsorTest";
 
 const HomePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Debug: Log when component renders
+  console.log("HomePage rendering - Sponsor section should be visible");
 
   const features = [
     {
@@ -248,6 +252,129 @@ const HomePage = () => {
                   gatherings worldwide.
                 </p>
               </div>
+            </Col>
+          </Row>
+        </Container>
+      </section>
+
+      {/* Test Component */}
+
+      {/* Sponsors Section */}
+      <section
+        className="py-5 bg-light"
+        style={{
+          border: "3px solid #28a745",
+          backgroundColor: "#f8f9fa",
+          margin: "20px 0",
+          position: "relative",
+          zIndex: 1000,
+        }}
+      >
+        <Container>
+          <Row className="text-center mb-5">
+            <Col>
+              <h2
+                className="fw-bold mb-3"
+                style={{ color: "#28a745", fontSize: "2.5rem" }}
+              >
+                🌟 Our Proud Sponsors 🌟
+              </h2>
+              <p className="lead text-muted mb-0">
+                These organizations are committed to making Simhastha 2028 a
+                Clean & Green event
+              </p>
+              <div
+                style={{
+                  backgroundColor: "#28a745",
+                  color: "white",
+                  padding: "5px 15px",
+                  borderRadius: "20px",
+                  display: "inline-block",
+                  marginTop: "10px",
+                  fontSize: "0.9rem",
+                }}
+              >
+                SPONSOR SECTION ACTIVE
+              </div>
+            </Col>
+          </Row>
+          <Row className="g-4 justify-content-center">
+            <Col xs={6} sm={4} md={3} lg={2}>
+              <div
+                className="text-center"
+                style={{
+                  padding: "10px",
+                  border: "1px solid #dee2e6",
+                  borderRadius: "8px",
+                  backgroundColor: "white",
+                }}
+              >
+                <img
+                  src="/sponsors/bisleri.svg"
+                  alt="Bisleri"
+                  className="img-fluid mb-3"
+                  style={{
+                    maxHeight: "100px",
+                    filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.1))",
+                    border: "1px solid #e9ecef",
+                  }}
+                />
+                <h6 className="fw-bold mb-1">Bisleri</h6>
+                <small className="text-muted">Official Water Partner</small>
+              </div>
+            </Col>
+            <Col xs={6} sm={4} md={3} lg={2}>
+              <div className="text-center">
+                <img
+                  src="/sponsors/hindustan-unilever.svg"
+                  alt="Hindustan Unilever Limited"
+                  className="img-fluid mb-3"
+                  style={{
+                    maxHeight: "100px",
+                    filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.1))",
+                  }}
+                />
+                <h6 className="fw-bold mb-1">Hindustan Unilever</h6>
+                <small className="text-muted">Sustainability Partner</small>
+              </div>
+            </Col>
+            <Col xs={6} sm={4} md={3} lg={2}>
+              <div className="text-center">
+                <img
+                  src="/sponsors/indianoil.jpg"
+                  alt="Clean & Green Initiative"
+                  className="img-fluid mb-3"
+                  style={{
+                    maxHeight: "100px",
+                    filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.1))",
+                  }}
+                />
+                <h6 className="fw-bold mb-1">Clean & Green</h6>
+                <small className="text-muted">Initiative Partner</small>
+              </div>
+            </Col>
+            <Col xs={6} sm={4} md={3} lg={2}>
+              <div className="text-center">
+                <img
+                  src="/sponsors/patanjali.webp"
+                  alt="IndianOil"
+                  className="img-fluid mb-3"
+                  style={{
+                    maxHeight: "100px",
+                    filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.1))",
+                  }}
+                />
+                <h6 className="fw-bold mb-1">IndianOil</h6>
+                <small className="text-muted">Energy Partner</small>
+              </div>
+            </Col>
+          </Row>
+          <Row className="mt-5">
+            <Col className="text-center">
+              <Button variant="outline-success" size="lg">
+                <FaLeaf className="me-2" />
+                Learn More About Our Partners
+              </Button>
             </Col>
           </Row>
         </Container>

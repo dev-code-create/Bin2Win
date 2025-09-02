@@ -1,0 +1,5 @@
+<svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="100" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+  <text x="100" y="55" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="#20c997">Bisleri</text>
+  <text x="100" y="75" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#6c757d">Official Sponsor</text>
+</svg>
