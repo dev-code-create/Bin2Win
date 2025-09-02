@@ -34,12 +34,20 @@ export const AuthProvider = ({ children }) => {
             }
           } catch (error) {
             console.error("Token verification failed:", error);
-            // Token is invalid, clear auth state
-            localStorage.removeItem("authToken");
-            localStorage.removeItem("userData");
-            localStorage.removeItem("refreshToken");
-            setToken(null);
-            setUser(null);
+            
+            // Only clear auth state if it's an authentication error (401/403)
+            // For network errors, keep the stored credentials
+            if (error.status === 401 || error.status === 403) {
+              console.log("Token is invalid, clearing auth state");
+              localStorage.removeItem("authToken");
+              localStorage.removeItem("userData");
+              localStorage.removeItem("refreshToken");
+              setToken(null);
+              setUser(null);
+            } else {
+              console.log("Network error during token verification, keeping stored credentials");
+              // Keep the stored credentials for offline use
+            }
           }
         }
       } catch (error) {

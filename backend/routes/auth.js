@@ -39,6 +39,6 @@ router.post("/refresh-token", (req, res) =>
 router.post("/logout", authenticateUser, (req, res) =>
   AuthController.logout(req, res)
 );
-router.get("/me", (req, res) => AuthController.getMe(req, res));
+router.get("/me", authenticateUser, (req, res) => AuthController.getMe(req, res));
 
 export default router;
