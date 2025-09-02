@@ -24,6 +24,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import QRCodeScanner from "../components/QRCodeScanner";
+import apiService from "../services/api";
 
 const AdminDashboardPage = () => {
   const { user, userType, logout } = useAuth();
@@ -52,33 +53,44 @@ const AdminDashboardPage = () => {
     { value: "textile", label: "Textile", points: 7, icon: "👕" },
   ];
 
-  // Handle QR scan from the scanner component
+    // Handle QR scan from the scanner component
   const handleQRScan = async (qrCode) => {
     if (!qrCode.trim()) {
       toast.error("Invalid QR code");
       return;
     }
 
+    // Debug auth state
+    console.log("Admin token check:", {
+      token: localStorage.getItem("authToken"),
+      userType: localStorage.getItem("userType"),
+    });
+
     setIsLoading(true);
     try {
-      // Simulate QR scan API call
-      // const response = await apiService.scanUserQR(qrCode);
+      const response = await apiService.scanUserQR(qrCode);
 
-      // Demo data - replace with actual API call
-      const mockUser = {
-        id: "user123",
-        name: "Ramesh Kumar",
-        username: "ramesh_kumar",
-        greenCredits: 150,
-        currentRank: "Bronze",
-        qrCode: qrCode,
-      };
+      if (response.success) {
+        const userData = {
+          id: response.data.user.id,
+          name: response.data.user.name,
+          username: response.data.user.username,
+          greenCredits: response.data.user.greenCredits,
+          currentRank: response.data.user.currentRank,
+          totalWasteSubmitted: response.data.user.totalWasteSubmitted,
+          qrCode: qrCode,
+          booth: response.data.booth,
+          admin: response.data.admin
+        };
 
-      setScannedUser(mockUser);
-      setShowCollectionForm(true);
-      toast.success(`User ${mockUser.name} scanned successfully!`);
+        setScannedUser(userData);
+        setShowCollectionForm(true);
+        toast.success(`User ${userData.name} scanned successfully!`);
+      } else {
+        throw new Error(response.message || "Invalid QR code");
+      }
     } catch (error) {
-      toast.error("Failed to scan QR code. Please try again.");
+      toast.error(error.message || "Failed to scan QR code. Please try again.");
       console.error("QR scan error:", error);
     } finally {
       setIsLoading(false);
@@ -103,28 +115,41 @@ const AdminDashboardPage = () => {
         (type) => type.value === collectionForm.wasteType
       );
       const quantity = parseFloat(collectionForm.quantity);
-      const pointsEarned = quantity * selectedWasteType.points;
 
-      // Simulate collection submission API call
-      // const response = await apiService.submitWasteCollection({
-      //   userId: scannedUser.id,
-      //   wasteType: collectionForm.wasteType,
-      //   quantity: quantity,
-      //   notes: collectionForm.notes
-      // });
+      const submissionData = {
+        userId: scannedUser.id,
+        boothId: scannedUser.booth?.id,
+        wasteType: collectionForm.wasteType,
+        quantity: quantity,
+        notes: collectionForm.notes
+      };
 
-      toast.success(
-        `✅ Collection Recorded!\n` +
-          `User: ${scannedUser.name}\n` +
-          `${quantity}kg ${selectedWasteType.label} = ${pointsEarned} points`
-      );
+      const response = await apiService.adminSubmitWaste(submissionData);
 
-      // Reset form
-      setCollectionForm({ wasteType: "", quantity: "", notes: "" });
-      setScannedUser(null);
-      setShowCollectionForm(false);
+      if (response.success) {
+        const pointsEarned = response.data.pointsEarned || (quantity * selectedWasteType.points);
+        
+        toast.success(
+          `✅ Collection Recorded!\n` +
+            `User: ${scannedUser.name}\n` +
+            `${quantity}kg ${selectedWasteType.label} = ${pointsEarned} points`
+        );
+
+        // Update scanned user's credits for display
+        setScannedUser(prev => ({
+          ...prev,
+          greenCredits: prev.greenCredits + pointsEarned
+        }));
+
+        // Reset form
+        setCollectionForm({ wasteType: "", quantity: "", notes: "" });
+        setScannedUser(null);
+        setShowCollectionForm(false);
+      } else {
+        throw new Error(response.message || "Failed to record collection");
+      }
     } catch (error) {
-      toast.error("Failed to record collection. Please try again.");
+      toast.error(error.message || "Failed to record collection. Please try again.");
       console.error("Collection submission error:", error);
     } finally {
       setIsLoading(false);
@@ -138,7 +163,7 @@ const AdminDashboardPage = () => {
 
   // Redirect if not admin
   if (userType !== "admin") {
-    navigate("/login");
+    navigate("/admin/login");
     return null;
   }
 

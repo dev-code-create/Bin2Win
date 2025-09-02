@@ -1,18 +1,25 @@
 import axios from "axios";
 
-// API Configuration - Mobile friendly setup
+// API Configuration - Smart host detection
 const getApiBaseUrl = () => {
   if (process.env.REACT_APP_API_BASE_URL) {
     return process.env.REACT_APP_API_BASE_URL;
   }
-  
-  // For mobile access, use the computer's IP instead of localhost
-  const host = window.location.hostname === 'localhost' ? '192.168.1.3' : window.location.hostname;
-  return `http://${host}:3001/api`;
+
+  // If we're on localhost/127.0.0.1, use localhost for backend
+  // If we're on network IP, use the same network IP for backend
+  const hostname = window.location.hostname;
+
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    return "http://localhost:3001/api";
+  } else {
+    // For mobile/network access, use the same host as frontend
+    return `http://${hostname}:3001/api`;
+  }
 };
 
 const API_BASE_URL = getApiBaseUrl();
-console.log('API_BASE_URL:', API_BASE_URL);
+console.log("API_BASE_URL:", API_BASE_URL);
 
 class ApiService {
   constructor() {
@@ -44,9 +51,12 @@ class ApiService {
           const refreshToken = localStorage.getItem("refreshToken");
           if (refreshToken) {
             try {
-              const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-                refreshToken,
-              });
+              const response = await axios.post(
+                `${API_BASE_URL}/auth/refresh`,
+                {
+                  refreshToken,
+                }
+              );
               const { token } = response.data;
               localStorage.setItem("authToken", token);
               // Retry the original request
@@ -104,11 +114,11 @@ class ApiService {
       username,
       password,
     });
-    
+
     if (response.success && response.data.token) {
       localStorage.setItem("authToken", response.data.token);
     }
-    
+
     return response;
   }
 
@@ -117,22 +127,18 @@ class ApiService {
       login: username,
       password,
     });
-    
-    if (response.success && response.data.token) {
-      localStorage.setItem("authToken", response.data.token);
-      localStorage.setItem("userType", "admin");
-    }
-    
+
+    // Don't set localStorage here - let AuthContext handle it
     return response;
   }
 
   async register(userData) {
     const response = await this.request("POST", "/auth/register", userData);
-    
+
     if (response.success && response.data.authToken) {
       localStorage.setItem("authToken", response.data.authToken);
     }
-    
+
     return response;
   }
 
@@ -153,7 +159,10 @@ class ApiService {
   }
 
   async resetPassword(token, newPassword) {
-    return this.request("POST", "/auth/reset-password", { token, newPassword });
+    return this.request("POST", "/auth/reset-password", {
+      token,
+      newPassword,
+    });
   }
 
   async changePassword(oldPassword, newPassword) {
@@ -209,7 +218,10 @@ class ApiService {
 
   async getWasteSubmissions(params = {}) {
     const queryString = new URLSearchParams(params).toString();
-    return this.request("GET", `/waste/submissions${queryString ? `?${queryString}` : ""}`);
+    return this.request(
+      "GET",
+      `/waste/submissions${queryString ? `?${queryString}` : ""}`
+    );
   }
 
   async getWasteSubmissionById(id) {
@@ -230,17 +242,26 @@ class ApiService {
 
   async getWasteSubmissionHistory(params = {}) {
     const queryString = new URLSearchParams(params).toString();
-    return this.request("GET", `/waste/history${queryString ? `?${queryString}` : ""}`);
+    return this.request(
+      "GET",
+      `/waste/history${queryString ? `?${queryString}` : ""}`
+    );
   }
 
   // Collection Booth API
   async getNearbyBooths(latitude, longitude, radius = 5000) {
-    return this.request("GET", `/booths/nearby?lat=${latitude}&lng=${longitude}&radius=${radius}`);
+    return this.request(
+      "GET",
+      `/booths/nearby?lat=${latitude}&lng=${longitude}&radius=${radius}`
+    );
   }
 
   async getAllBooths(params = {}) {
     const queryString = new URLSearchParams(params).toString();
-    return this.request("GET", `/booths${queryString ? `?${queryString}` : ""}`);
+    return this.request(
+      "GET",
+      `/booths${queryString ? `?${queryString}` : ""}`
+    );
   }
 
   async getBoothById(id) {
@@ -262,7 +283,10 @@ class ApiService {
   // Rewards API
   async getRewards(params = {}) {
     const queryString = new URLSearchParams(params).toString();
-    return this.request("GET", `/rewards${queryString ? `?${queryString}` : ""}`);
+    return this.request(
+      "GET",
+      `/rewards${queryString ? `?${queryString}` : ""}`
+    );
   }
 
   async getRewardById(id) {
@@ -289,7 +313,10 @@ class ApiService {
 
   async getUserRedemptions(params = {}) {
     const queryString = new URLSearchParams(params).toString();
-    return this.request("GET", `/rewards/user/redemptions${queryString ? `?${queryString}` : ""}`);
+    return this.request(
+      "GET",
+      `/rewards/user/redemptions${queryString ? `?${queryString}` : ""}`
+    );
   }
 
   async getRedemptionById(redemptionId) {
@@ -315,17 +342,19 @@ class ApiService {
 
   async getRewardsByCategory(category, params = {}) {
     const queryString = new URLSearchParams(params).toString();
-    return this.request("GET", `/rewards/category/${category}${queryString ? `?${queryString}` : ""}`);
+    return this.request(
+      "GET",
+      `/rewards/category/${category}${queryString ? `?${queryString}` : ""}`
+    );
   }
-
-
 
   async getRedemptionHistory(params = {}) {
     const queryString = new URLSearchParams(params).toString();
-    return this.request("GET", `/rewards/redemptions${queryString ? `?${queryString}` : ""}`);
+    return this.request(
+      "GET",
+      `/rewards/redemptions${queryString ? `?${queryString}` : ""}`
+    );
   }
-
-
 
   async cancelRedemption(id) {
     return this.request("PUT", `/rewards/redemptions/${id}/cancel`);
@@ -334,7 +363,10 @@ class ApiService {
   // Transaction API
   async getTransactions(params = {}) {
     const queryString = new URLSearchParams(params).toString();
-    return this.request("GET", `/transactions${queryString ? `?${queryString}` : ""}`);
+    return this.request(
+      "GET",
+      `/transactions${queryString ? `?${queryString}` : ""}`
+    );
   }
 
   async getTransactionById(id) {
@@ -343,7 +375,10 @@ class ApiService {
 
   async getTransactionHistory(params = {}) {
     const queryString = new URLSearchParams(params).toString();
-    return this.request("GET", `/transactions/history${queryString ? `?${queryString}` : ""}`);
+    return this.request(
+      "GET",
+      `/transactions/history${queryString ? `?${queryString}` : ""}`
+    );
   }
 
   // Leaderboard API
@@ -369,11 +404,30 @@ class ApiService {
   }
 
   async getWasteTypeDistribution(period = "30d") {
-    return this.request("GET", `/analytics/waste-distribution?period=${period}`);
+    return this.request(
+      "GET",
+      `/analytics/waste-distribution?period=${period}`
+    );
+  }
+
+  // Admin Waste Collection API
+  async scanUserQR(userQRCode) {
+    return this.request("POST", "/waste/admin/scan-user", { userQRCode });
+  }
+
+  async adminSubmitWaste(submissionData) {
+    return this.request("POST", "/waste/admin/submit-waste", submissionData);
+  }
+
+  async getAdminCollections(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    return this.request(
+      "GET",
+      `/waste/admin/collections${queryString ? `?${queryString}` : ""}`
+    );
   }
 
   // Search API
-
 
   async searchBooths(query, filters = {}) {
     const params = { q: query, ...filters };

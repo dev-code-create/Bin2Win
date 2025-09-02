@@ -23,18 +23,26 @@ export const AuthProvider = ({ children }) => {
           setUser(JSON.parse(storedUser));
           setUserType(storedUserType);
 
-          // Verify token with backend
+          // Verify token with backend (different for admin vs user)
           try {
-            const response = await apiService.getCurrentUser();
-            if (response.success) {
-              setUser(response.data);
-              localStorage.setItem("userData", JSON.stringify(response.data));
+            if (storedUserType === "admin") {
+              // For admin users, skip getCurrentUser verification as it's for regular users
+              // Admin tokens will be verified when making actual API calls
+              console.log(
+                "Admin user detected, skipping user token verification"
+              );
             } else {
-              throw new Error("Token verification failed");
+              const response = await apiService.getCurrentUser();
+              if (response.success) {
+                setUser(response.data);
+                localStorage.setItem("userData", JSON.stringify(response.data));
+              } else {
+                throw new Error("Token verification failed");
+              }
             }
           } catch (error) {
             console.error("Token verification failed:", error);
-            
+
             // Only clear auth state if it's an authentication error (401/403)
             // For network errors, keep the stored credentials
             if (error.status === 401 || error.status === 403) {
@@ -45,7 +53,9 @@ export const AuthProvider = ({ children }) => {
               setToken(null);
               setUser(null);
             } else {
-              console.log("Network error during token verification, keeping stored credentials");
+              console.log(
+                "Network error during token verification, keeping stored credentials"
+              );
               // Keep the stored credentials for offline use
             }
           }
@@ -140,6 +150,21 @@ export const AuthProvider = ({ children }) => {
       const updatedUser = { ...user, ...userData };
       setUser(updatedUser);
       localStorage.setItem("userData", JSON.stringify(updatedUser));
+    }
+  };
+
+  const refreshUserData = async () => {
+    try {
+      if (!token) return;
+
+      const response = await apiService.getCurrentUser();
+      if (response.success) {
+        setUser(response.data);
+        localStorage.setItem("userData", JSON.stringify(response.data));
+        return response.data;
+      }
+    } catch (error) {
+      console.error("Failed to refresh user data:", error);
     }
   };
 
@@ -291,6 +316,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateUser,
+    refreshUserData,
     refreshToken,
     updateUserCredits,
     updateUserRank,
