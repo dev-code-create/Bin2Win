@@ -19,6 +19,7 @@ import DashboardPage from './pages/DashboardPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import WasteSubmissionPage from './pages/WasteSubmissionPage';
 import RewardStorePage from './pages/RewardStorePage';
+import OrderHistoryPage from './pages/OrderHistoryPage';
 import BoothLocatorPage from './pages/BoothLocatorPage';
 import HistoryPage from './pages/HistoryPage';
 import ProfilePage from './pages/ProfilePage';
@@ -26,6 +27,16 @@ import RewardDetailsPage from './pages/RewardDetailsPage';
 import BoothDetailsPage from './pages/BoothDetailsPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import NotFoundPage from './pages/NotFoundPage';
+
+// Admin Components
+import AdminLayout from './components/admin/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import UserManagement from './pages/admin/UserManagement';
+import WasteSubmissionManagement from './pages/admin/WasteSubmissionManagement';
+import BoothManagement from './pages/admin/BoothManagement';
+import RewardsManagement from './pages/admin/RewardsManagement';
+import AnalyticsDashboard from './pages/admin/AnalyticsDashboard';
+import AdminSettings from './pages/admin/AdminSettings';
 
 // Styles
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -59,12 +70,84 @@ function App() {
                 }
               />
 
-              {/* Admin Dashboard */}
+              {/* Admin Dashboard - Legacy booth operator dashboard */}
               <Route
                 path="/admin/dashboard"
                 element={
                   <ProtectedRoute adminOnly={true}>
                     <AdminDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* New Admin Panel Routes */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <AdminLayout>
+                      <AdminDashboard />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/users"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <AdminLayout>
+                      <UserManagement />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/submissions"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <AdminLayout>
+                      <WasteSubmissionManagement />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/booths"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <AdminLayout>
+                      <BoothManagement />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/rewards"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <AdminLayout>
+                      <RewardsManagement />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/analytics"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <AdminLayout>
+                      <AnalyticsDashboard />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/settings"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <AdminLayout>
+                      <AdminSettings />
+                    </AdminLayout>
                   </ProtectedRoute>
                 }
               />
@@ -84,6 +167,16 @@ function App() {
                   <ProtectedRoute>
                     <Layout>
                       <RewardStorePage />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/orders"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <OrderHistoryPage />
                     </Layout>
                   </ProtectedRoute>
                 }

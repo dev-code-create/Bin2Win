@@ -1,0 +1,277 @@
+/* QR Code Scanner Styles */
+.qr-scanner-card {
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.qr-scanner-container {
+  max-width: 500px;
+  margin: 0 auto;
+  position: relative;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.qr-scanner-container video {
+  width: 100% !important;
+  height: 360px !important;
+  object-fit: cover;
+  border-radius: 12px;
+  background: #000;
+}
+
+.qr-scanner-container canvas {
+  width: 100% !important;
+  height: 360px !important;
+  object-fit: cover;
+  border-radius: 12px;
+  background: #000;
+}
+
+/* Hide the default html5-qrcode UI elements we don't want */
+#qr-scanner-container__dashboard_section {
+  display: none !important;
+}
+
+#qr-scanner-container__dashboard_section_csr {
+  display: none !important;
+}
+
+/* Hide the default white QR box from html5-qrcode */
+#qr-scanner-container__scan_region img {
+  display: none !important;
+}
+
+#qr-scanner-container__scan_region canvas {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Hide the default qr-box overlay */
+.qr-scanner-container [style*="position: absolute"][style*="border"] {
+  display: none !important;
+}
+
+/* Target the specific QR box element that html5-qrcode creates */
+#qr-scanner-container div[style*="position: absolute"][style*="border"] {
+  display: none !important;
+}
+
+/* More specific targeting for the default QR box */
+#qr-scanner-container > div > div[style*="border"] {
+  border: none !important;
+  background: transparent !important;
+}
+
+/* Style the scanner region */
+#qr-scanner-container__scan_region {
+  border: none !important;
+  padding: 0 !important;
+  background: transparent !important;
+  position: relative;
+}
+
+/* QR Code targeting overlay */
+.qr-scanner-container::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 250px;
+  height: 250px;
+  transform: translate(-50%, -50%);
+  border: 3px solid #28a745;
+  border-radius: 12px;
+  box-shadow: 
+    0 0 0 4px rgba(40, 167, 69, 0.1),
+    inset 0 0 0 4px rgba(40, 167, 69, 0.1);
+  z-index: 10;
+  pointer-events: none;
+  animation: qr-pulse 2s ease-in-out infinite;
+}
+
+/* Corner indicators for QR targeting */
+.qr-scanner-container::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 250px;
+  height: 250px;
+  transform: translate(-50%, -50%);
+  background: 
+    linear-gradient(90deg, #28a745 0, #28a745 30px, transparent 30px),
+    linear-gradient(180deg, #28a745 0, #28a745 30px, transparent 30px),
+    linear-gradient(270deg, #28a745 0, #28a745 30px, transparent 30px),
+    linear-gradient(0deg, #28a745 0, #28a745 30px, transparent 30px);
+  background-size: 30px 6px, 6px 30px, 30px 6px, 6px 30px;
+  background-position: top left, top left, bottom right, bottom right;
+  background-repeat: no-repeat;
+  z-index: 11;
+  pointer-events: none;
+  border-radius: 12px;
+}
+
+@keyframes qr-pulse {
+  0%, 100% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.02);
+  }
+}
+
+/* Camera controls styling */
+.camera-controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+/* Manual entry form styling */
+.manual-entry-section .form-label {
+  font-weight: 600;
+  color: #495057;
+}
+
+.manual-entry-section .form-control:focus {
+  border-color: #28a745;
+  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+/* Tab styling */
+.nav-tabs .nav-link {
+  color: #6c757d;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+}
+
+.nav-tabs .nav-link:hover {
+  border-color: transparent;
+  border-bottom-color: #28a745;
+  color: #28a745;
+}
+
+.nav-tabs .nav-link.active {
+  color: #28a745;
+  background: none;
+  border-color: transparent;
+  border-bottom-color: #28a745;
+  font-weight: 600;
+}
+
+/* Success/Error states */
+.scanner-success {
+  border-color: #28a745 !important;
+  background-color: #f8fff8;
+}
+
+.scanner-error {
+  border-color: #dc3545 !important;
+  background-color: #fff8f8;
+}
+
+/* Loading state */
+.scanner-loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Hide html5-qrcode default buttons and UI */
+#qr-scanner-container__dashboard_section_swaplink {
+  display: none !important;
+}
+
+#qr-scanner-container__dashboard_section_fsr {
+  display: none !important;
+}
+
+/* Style the file selection region if it appears */
+#qr-scanner-container__filescan_input {
+  display: none !important;
+}
+
+/* Remove all default html5-qrcode overlays and UI elements */
+#qr-scanner-container [id*="__qr_region"] {
+  border: none !important;
+  background: none !important;
+}
+
+/* Remove any default scanning region styling */
+#qr-scanner-container [class*="qr"] {
+  border: none !important;
+}
+
+/* Force hide any positioned overlay elements */
+#qr-scanner-container div[style*="position"] div[style*="border"] {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Remove default qr-box styling */
+.qr-scanner-container * {
+  outline: none !important;
+}
+
+/* Specifically target and hide the html5-qrcode qr-box */
+#qr-scanner-container [style*="outline"] {
+  outline: none !important;
+  border: none !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .qr-scanner-container {
+    max-width: 100%;
+    margin: 0;
+  }
+  
+  .qr-scanner-container video,
+  .qr-scanner-container canvas {
+    height: 280px !important;
+  }
+  
+  .qr-scanner-container::before {
+    width: 200px;
+    height: 200px;
+  }
+  
+  .qr-scanner-container::after {
+    width: 200px;
+    height: 200px;
+  }
+  
+  .camera-controls {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .camera-controls .btn {
+    width: 100%;
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .qr-scanner-container video,
+  .qr-scanner-container canvas {
+    height: 240px !important;
+  }
+  
+  .qr-scanner-container::before {
+    width: 160px;
+    height: 160px;
+  }
+  
+  .qr-scanner-container::after {
+    width: 160px;
+    height: 160px;
+  }
+}

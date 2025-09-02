@@ -9,40 +9,36 @@ import {
   Alert,
   Badge,
   Modal,
-  InputGroup,
 } from "react-bootstrap";
-import { 
-  FaQrcode, 
-  FaUser, 
-  FaWeight, 
-  FaRecycle, 
-  FaCoins, 
+import {
+  FaQrcode,
+  FaUser,
+  FaWeight,
+  FaRecycle,
+  FaCoins,
   FaHistory,
   FaSignOutAlt,
   FaCheckCircle,
-  FaCamera
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import apiService from "../services/api";
+import QRCodeScanner from "../components/QRCodeScanner";
 
 const AdminDashboardPage = () => {
   const { user, userType, logout } = useAuth();
   const navigate = useNavigate();
-  
+
   // State management
-  const [scanMode, setScanMode] = useState(false);
-  const [qrInput, setQrInput] = useState("");
   const [scannedUser, setScannedUser] = useState(null);
   const [showCollectionForm, setShowCollectionForm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Collection form state
   const [collectionForm, setCollectionForm] = useState({
     wasteType: "",
     quantity: "",
-    notes: ""
+    notes: "",
   });
 
   // Waste types with point values
@@ -53,21 +49,21 @@ const AdminDashboardPage = () => {
     { value: "glass", label: "Glass", points: 8, icon: "🍶" },
     { value: "organic", label: "Organic", points: 3, icon: "🍃" },
     { value: "electronic", label: "E-Waste", points: 25, icon: "📱" },
-    { value: "textile", label: "Textile", points: 7, icon: "👕" }
+    { value: "textile", label: "Textile", points: 7, icon: "👕" },
   ];
 
-  // Handle QR scan simulation (for demo purposes)
-  const handleQRScan = async () => {
-    if (!qrInput.trim()) {
-      toast.error("Please enter a QR code");
+  // Handle QR scan from the scanner component
+  const handleQRScan = async (qrCode) => {
+    if (!qrCode.trim()) {
+      toast.error("Invalid QR code");
       return;
     }
 
     setIsLoading(true);
     try {
       // Simulate QR scan API call
-      // const response = await apiService.scanUserQR(qrInput);
-      
+      // const response = await apiService.scanUserQR(qrCode);
+
       // Demo data - replace with actual API call
       const mockUser = {
         id: "user123",
@@ -75,9 +71,9 @@ const AdminDashboardPage = () => {
         username: "ramesh_kumar",
         greenCredits: 150,
         currentRank: "Bronze",
-        qrCode: qrInput
+        qrCode: qrCode,
       };
-      
+
       setScannedUser(mockUser);
       setShowCollectionForm(true);
       toast.success(`User ${mockUser.name} scanned successfully!`);
@@ -103,7 +99,9 @@ const AdminDashboardPage = () => {
 
     setIsLoading(true);
     try {
-      const selectedWasteType = wasteTypes.find(type => type.value === collectionForm.wasteType);
+      const selectedWasteType = wasteTypes.find(
+        (type) => type.value === collectionForm.wasteType
+      );
       const quantity = parseFloat(collectionForm.quantity);
       const pointsEarned = quantity * selectedWasteType.points;
 
@@ -117,16 +115,14 @@ const AdminDashboardPage = () => {
 
       toast.success(
         `✅ Collection Recorded!\n` +
-        `User: ${scannedUser.name}\n` +
-        `${quantity}kg ${selectedWasteType.label} = ${pointsEarned} points`
+          `User: ${scannedUser.name}\n` +
+          `${quantity}kg ${selectedWasteType.label} = ${pointsEarned} points`
       );
 
       // Reset form
       setCollectionForm({ wasteType: "", quantity: "", notes: "" });
       setScannedUser(null);
       setShowCollectionForm(false);
-      setQrInput("");
-      setScanMode(false);
     } catch (error) {
       toast.error("Failed to record collection. Please try again.");
       console.error("Collection submission error:", error);
@@ -141,7 +137,7 @@ const AdminDashboardPage = () => {
   };
 
   // Redirect if not admin
-  if (userType !== 'admin') {
+  if (userType !== "admin") {
     navigate("/login");
     return null;
   }
@@ -170,11 +166,7 @@ const AdminDashboardPage = () => {
               </div>
             </Col>
             <Col xs="auto">
-              <Button 
-                variant="outline-light" 
-                size="sm" 
-                onClick={handleLogout}
-              >
+              <Button variant="outline-light" size="sm" onClick={handleLogout}>
                 <FaSignOutAlt className="me-1" />
                 Logout
               </Button>
@@ -187,74 +179,13 @@ const AdminDashboardPage = () => {
         <Row>
           {/* QR Scanner Section */}
           <Col lg={8}>
-            <Card className="shadow-sm">
-              <Card.Header className="bg-success text-white">
-                <h5 className="mb-0">
-                  <FaQrcode className="me-2" />
-                  QR Code Scanner
-                </h5>
-              </Card.Header>
-              <Card.Body>
-                {!scanMode ? (
-                  <div className="text-center py-4">
-                    <FaCamera size={64} className="text-muted mb-3" />
-                    <h4>Ready to Scan</h4>
-                    <p className="text-muted mb-4">
-                      Scan user QR codes to record waste collections
-                    </p>
-                    <Button 
-                      variant="success" 
-                      size="lg"
-                      onClick={() => setScanMode(true)}
-                    >
-                      <FaQrcode className="me-2" />
-                      Start Scanning
-                    </Button>
-                  </div>
-                ) : (
-                  <div>
-                    <h5>Scan User QR Code</h5>
-                    <p className="text-muted">Enter or scan the user's QR code below:</p>
-                    
-                    <InputGroup className="mb-3">
-                      <Form.Control
-                        type="text"
-                        placeholder="Enter QR code (e.g., SIMHASTHA_USER_A1B2C3D4E5F6G7H8)"
-                        value={qrInput}
-                        onChange={(e) => setQrInput(e.target.value)}
-                        disabled={isLoading}
-                      />
-                      <Button 
-                        variant="success"
-                        onClick={handleQRScan}
-                        disabled={isLoading || !qrInput.trim()}
-                      >
-                        {isLoading ? "Scanning..." : "Scan"}
-                      </Button>
-                    </InputGroup>
-
-                    <div className="d-flex gap-2">
-                      <Button 
-                        variant="outline-secondary"
-                        onClick={() => {
-                          setScanMode(false);
-                          setQrInput("");
-                          setScannedUser(null);
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button 
-                        variant="outline-info"
-                        onClick={() => setQrInput("SIMHASTHA_USER_A1B2C3D4E5F6G7H8")}
-                      >
-                        Use Demo QR
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </Card.Body>
-            </Card>
+            <QRCodeScanner
+              onScan={handleQRScan}
+              onError={(error) => toast.error(error)}
+              isLoading={isLoading}
+              placeholder="Enter QR code (e.g., SIMHASTHA_USER_A1B2C3D4E5F6G7H8)"
+              className="shadow-sm"
+            />
 
             {/* User Info Display */}
             {scannedUser && (
@@ -316,7 +247,10 @@ const AdminDashboardPage = () => {
               </Card.Header>
               <Card.Body>
                 {wasteTypes.map((type) => (
-                  <div key={type.value} className="d-flex justify-content-between align-items-center mb-2">
+                  <div
+                    key={type.value}
+                    className="d-flex justify-content-between align-items-center mb-2"
+                  >
                     <div>
                       <span className="me-2">{type.icon}</span>
                       <small>{type.label}</small>
@@ -331,7 +265,11 @@ const AdminDashboardPage = () => {
       </Container>
 
       {/* Collection Form Modal */}
-      <Modal show={showCollectionForm} onHide={() => setShowCollectionForm(false)} size="lg">
+      <Modal
+        show={showCollectionForm}
+        onHide={() => setShowCollectionForm(false)}
+        size="lg"
+      >
         <Modal.Header closeButton>
           <Modal.Title>
             <FaRecycle className="me-2" />
@@ -341,7 +279,8 @@ const AdminDashboardPage = () => {
         <Modal.Body>
           {scannedUser && (
             <Alert variant="info">
-              <strong>User:</strong> {scannedUser.name} (@{scannedUser.username})
+              <strong>User:</strong> {scannedUser.name} (@{scannedUser.username}
+              )
             </Alert>
           )}
 
@@ -352,10 +291,12 @@ const AdminDashboardPage = () => {
                   <Form.Label>Waste Type *</Form.Label>
                   <Form.Select
                     value={collectionForm.wasteType}
-                    onChange={(e) => setCollectionForm(prev => ({
-                      ...prev,
-                      wasteType: e.target.value
-                    }))}
+                    onChange={(e) =>
+                      setCollectionForm((prev) => ({
+                        ...prev,
+                        wasteType: e.target.value,
+                      }))
+                    }
                     required
                   >
                     <option value="">Select waste type</option>
@@ -376,10 +317,12 @@ const AdminDashboardPage = () => {
                     min="0.1"
                     placeholder="0.0"
                     value={collectionForm.quantity}
-                    onChange={(e) => setCollectionForm(prev => ({
-                      ...prev,
-                      quantity: e.target.value
-                    }))}
+                    onChange={(e) =>
+                      setCollectionForm((prev) => ({
+                        ...prev,
+                        quantity: e.target.value,
+                      }))
+                    }
                     required
                   />
                 </Form.Group>
@@ -393,10 +336,12 @@ const AdminDashboardPage = () => {
                 rows={2}
                 placeholder="Additional notes about the collection..."
                 value={collectionForm.notes}
-                onChange={(e) => setCollectionForm(prev => ({
-                  ...prev,
-                  notes: e.target.value
-                }))}
+                onChange={(e) =>
+                  setCollectionForm((prev) => ({
+                    ...prev,
+                    notes: e.target.value,
+                  }))
+                }
               />
             </Form.Group>
 
@@ -404,26 +349,32 @@ const AdminDashboardPage = () => {
             {collectionForm.wasteType && collectionForm.quantity && (
               <Alert variant="success">
                 <FaCoins className="me-2" />
-                <strong>Points to be awarded:</strong> {" "}
-                {parseFloat(collectionForm.quantity || 0) * 
-                 (wasteTypes.find(t => t.value === collectionForm.wasteType)?.points || 0)} points
+                <strong>Points to be awarded:</strong>{" "}
+                {parseFloat(collectionForm.quantity || 0) *
+                  (wasteTypes.find((t) => t.value === collectionForm.wasteType)
+                    ?.points || 0)}{" "}
+                points
               </Alert>
             )}
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button 
-            variant="secondary" 
+          <Button
+            variant="secondary"
             onClick={() => setShowCollectionForm(false)}
           >
             Cancel
           </Button>
-          <Button 
-            variant="success" 
+          <Button
+            variant="success"
             onClick={handleCollectionSubmit}
-            disabled={isLoading || !collectionForm.wasteType || !collectionForm.quantity}
+            disabled={
+              isLoading || !collectionForm.wasteType || !collectionForm.quantity
+            }
           >
-            {isLoading ? "Recording..." : (
+            {isLoading ? (
+              "Recording..."
+            ) : (
               <>
                 <FaCheckCircle className="me-2" />
                 Record Collection

@@ -263,6 +263,42 @@ class ApiService {
     return this.request("GET", `/rewards/popular?limit=${limit}`);
   }
 
+  async getRewardCategories() {
+    return this.request("GET", `/rewards/categories`);
+  }
+
+  async searchRewards(query, filters = {}) {
+    const params = { q: query, ...filters };
+    const queryString = new URLSearchParams(params).toString();
+    return this.request("GET", `/rewards/search?${queryString}`);
+  }
+
+  async redeemReward(rewardId, data = {}) {
+    return this.request("POST", `/rewards/${rewardId}/redeem`, data);
+  }
+
+  async getUserRedemptions(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    return this.request("GET", `/rewards/user/redemptions${queryString ? `?${queryString}` : ""}`);
+  }
+
+  async getRedemptionById(redemptionId) {
+    return this.request("GET", `/rewards/user/redemptions/${redemptionId}`);
+  }
+
+  // Wishlist API
+  async getWishlist() {
+    return this.request("GET", `/rewards/user/wishlist`);
+  }
+
+  async addToWishlist(rewardId) {
+    return this.request("POST", `/rewards/user/wishlist/${rewardId}`);
+  }
+
+  async removeFromWishlist(rewardId) {
+    return this.request("DELETE", `/rewards/user/wishlist/${rewardId}`);
+  }
+
   async getFeaturedRewards() {
     return this.request("GET", "/rewards/featured");
   }

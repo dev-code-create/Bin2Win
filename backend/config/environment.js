@@ -31,8 +31,6 @@ class Environment {
                process.env.MONGO_URI || 
                'mongodb://localhost:27017/simhastha-clean-green',
           options: {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
             maxPoolSize: parseInt(process.env.DB_MAX_POOL_SIZE) || 10,
             serverSelectionTimeoutMS: parseInt(process.env.DB_TIMEOUT) || 5000,
             socketTimeoutMS: 45000,

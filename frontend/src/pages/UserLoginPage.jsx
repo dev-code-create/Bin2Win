@@ -142,16 +142,19 @@ const UserLoginPage = () => {
     setErrors({});
 
     try {
-      const response = await apiService.register(
-        registerForm.username,
-        registerForm.password,
-        registerForm.name,
-        registerForm.email,
-        registerForm.phoneNumber
-      );
+      const userData = {
+        username: registerForm.username,
+        password: registerForm.password,
+        name: registerForm.name,
+        email: registerForm.email,
+        phoneNumber: registerForm.phoneNumber || undefined,
+      };
+
+      const response = await apiService.register(userData);
       
       if (response.success) {
-        await login(response.data.user, response.data.token);
+        const token = response.data.token || response.data.authToken;
+        await login(response.data.user, token);
         toast.success("Registration successful! Welcome to Simhastha 2028!");
         navigate("/dashboard");
       } else {
