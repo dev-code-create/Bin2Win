@@ -1,8 +1,18 @@
 import axios from "axios";
 
-// API Configuration
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:3001/api";
+// API Configuration - Mobile friendly setup
+const getApiBaseUrl = () => {
+  if (process.env.REACT_APP_API_BASE_URL) {
+    return process.env.REACT_APP_API_BASE_URL;
+  }
+  
+  // For mobile access, use the computer's IP instead of localhost
+  const host = window.location.hostname === 'localhost' ? '192.168.1.3' : window.location.hostname;
+  return `http://${host}:3001/api`;
+};
+
+const API_BASE_URL = getApiBaseUrl();
+console.log('API_BASE_URL:', API_BASE_URL);
 
 class ApiService {
   constructor() {
@@ -308,18 +318,14 @@ class ApiService {
     return this.request("GET", `/rewards/category/${category}${queryString ? `?${queryString}` : ""}`);
   }
 
-  async redeemReward(rewardId, quantity = 1) {
-    return this.request("POST", "/rewards/redeem", { rewardId, quantity });
-  }
+
 
   async getRedemptionHistory(params = {}) {
     const queryString = new URLSearchParams(params).toString();
     return this.request("GET", `/rewards/redemptions${queryString ? `?${queryString}` : ""}`);
   }
 
-  async getRedemptionById(id) {
-    return this.request("GET", `/rewards/redemptions/${id}`);
-  }
+
 
   async cancelRedemption(id) {
     return this.request("PUT", `/rewards/redemptions/${id}/cancel`);
@@ -367,11 +373,7 @@ class ApiService {
   }
 
   // Search API
-  async searchRewards(query, filters = {}) {
-    const params = { q: query, ...filters };
-    const queryString = new URLSearchParams(params).toString();
-    return this.request("GET", `/search/rewards?${queryString}`);
-  }
+
 
   async searchBooths(query, filters = {}) {
     const params = { q: query, ...filters };
