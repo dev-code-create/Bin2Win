@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+import https from "https";
+import fs from "fs";
 
 // Import configuration
 import { initializeConfig, Environment, Database } from "./config/index.js";
@@ -91,23 +93,80 @@ async function startServer() {
     // Start server
     const PORT = Environment.get("server.port");
     const HOST = Environment.get("server.host");
+    const USE_HTTPS = process.env.HTTPS === "true";
 
-    const server = app.listen(PORT, () => {
-      console.log("");
-      console.log("✅ Server successfully started!");
-      console.log(`🌐 Server URL: http://${HOST}:${PORT}`);
-      console.log(`📋 Health Check: http://${HOST}:${PORT}/api/health`);
-      console.log(`📚 API Base URL: http://${HOST}:${PORT}/api`);
-      console.log("");
-      console.log("📊 Available endpoints:");
-      console.log("   🔐 Auth: /api/auth");
-      console.log("   👤 User: /api/user");
-      console.log("   🗑️  Waste: /api/waste");
-      console.log("   🏢 Booths: /api/booths");
-      console.log("   🎁 Rewards: /api/rewards");
-      console.log("   ⚙️  Admin: /api/admin");
-      console.log("");
-    });
+    let server;
+
+    if (USE_HTTPS) {
+      // HTTPS Server
+      try {
+        const privateKey = fs.readFileSync(
+          path.join(__dirname, "key.pem"),
+          "utf8"
+        );
+        const certificate = fs.readFileSync(
+          path.join(__dirname, "cert.pem"),
+          "utf8"
+        );
+        const credentials = { key: privateKey, cert: certificate };
+
+        server = https.createServer(credentials, app);
+        server.listen(PORT, HOST, () => {
+          console.log("");
+          console.log("✅ HTTPS Server successfully started!");
+          console.log(`🌐 Server URL: https://${HOST}:${PORT}`);
+          console.log(`📋 Health Check: https://${HOST}:${PORT}/api/health`);
+          console.log(`📚 API Base URL: https://${HOST}:${PORT}/api`);
+          console.log("");
+          console.log("📊 Available endpoints:");
+          console.log("   🔐 Auth: /api/auth");
+          console.log("   👤 User: /api/user");
+          console.log("   🗑️  Waste: /api/waste");
+          console.log("   🏢 Booths: /api/booths");
+          console.log("   🎁 Rewards: /api/rewards");
+          console.log("   ⚙️  Admin: /api/admin");
+          console.log("");
+        });
+      } catch (error) {
+        console.error("❌ Failed to start HTTPS server:", error.message);
+        console.log("🔄 Falling back to HTTP server...");
+        // Fall back to HTTP
+        server = app.listen(PORT, HOST, () => {
+          console.log("");
+          console.log("✅ HTTP Server successfully started! (HTTPS fallback)");
+          console.log(`🌐 Server URL: http://${HOST}:${PORT}`);
+          console.log(`📋 Health Check: http://${HOST}:${PORT}/api/health`);
+          console.log(`📚 API Base URL: http://${HOST}:${PORT}/api`);
+          console.log("");
+          console.log("📊 Available endpoints:");
+          console.log("   🔐 Auth: /api/auth");
+          console.log("   👤 User: /api/user");
+          console.log("   🗑️  Waste: /api/waste");
+          console.log("   🏢 Booths: /api/booths");
+          console.log("   🎁 Rewards: /api/rewards");
+          console.log("   ⚙️  Admin: /api/admin");
+          console.log("");
+        });
+      }
+    } else {
+      // HTTP Server (default)
+      server = app.listen(PORT, HOST, () => {
+        console.log("");
+        console.log("✅ HTTP Server successfully started!");
+        console.log(`🌐 Server URL: http://${HOST}:${PORT}`);
+        console.log(`📋 Health Check: http://${HOST}:${PORT}/api/health`);
+        console.log(`📚 API Base URL: http://${HOST}:${PORT}/api`);
+        console.log("");
+        console.log("📊 Available endpoints:");
+        console.log("   🔐 Auth: /api/auth");
+        console.log("   👤 User: /api/user");
+        console.log("   🗑️  Waste: /api/waste");
+        console.log("   🏢 Booths: /api/booths");
+        console.log("   🎁 Rewards: /api/rewards");
+        console.log("   ⚙️  Admin: /api/admin");
+        console.log("");
+      });
+    }
 
     // Graceful shutdown
     const gracefulShutdown = async (signal) => {
