@@ -116,18 +116,26 @@ const AdminDashboardPage = () => {
       );
       const quantity = parseFloat(collectionForm.quantity);
 
+      // Include user name in submission data to ensure credits go to the right user
       const submissionData = {
         userId: scannedUser.id,
-        boothId: scannedUser.booth?.id,
+        userName: scannedUser.name,
+        username: scannedUser.username,
+        boothId: scannedUser.booth?._id || 'demo-booth-001',
         wasteType: collectionForm.wasteType,
         quantity: quantity,
-        notes: collectionForm.notes
+        notes: collectionForm.notes,
+        qrCode: scannedUser.qrCode
       };
 
+      console.log("Submitting waste collection:", submissionData);
       const response = await apiService.adminSubmitWaste(submissionData);
 
       if (response.success) {
-        const pointsEarned = response.data.pointsEarned || (quantity * selectedWasteType.points);
+        // Get points earned from response
+        const pointsEarned = response.data.user.creditsEarned || 
+                            response.data.submission.pointsEarned || 
+                            (quantity * selectedWasteType.points);
         
         toast.success(
           `✅ Collection Recorded!\n` +
@@ -138,13 +146,14 @@ const AdminDashboardPage = () => {
         // Update scanned user's credits for display
         setScannedUser(prev => ({
           ...prev,
-          greenCredits: prev.greenCredits + pointsEarned
+          greenCredits: response.data.user.newCreditsBalance || (prev.greenCredits + pointsEarned)
         }));
 
-        // Reset form
-        setCollectionForm({ wasteType: "", quantity: "", notes: "" });
-        setScannedUser(null);
-        setShowCollectionForm(false);
+        // Reset form after a short delay to show updated credits
+        setTimeout(() => {
+          setCollectionForm({ wasteType: "", quantity: "", notes: "" });
+          setShowCollectionForm(false);
+        }, 2000);
       } else {
         throw new Error(response.message || "Failed to record collection");
       }

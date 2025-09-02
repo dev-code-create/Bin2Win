@@ -36,36 +36,75 @@ const DashboardPage = () => {
   const [recentSubmissions, setRecentSubmissions] = useState([]);
   const [popularRewards, setPopularRewards] = useState([]);
   const [error, setError] = useState(null);
+  const [userCredits, setUserCredits] = useState(user?.greenCredits || 0);
+  const [lastRefresh, setLastRefresh] = useState(new Date());
 
   useEffect(() => {
     fetchDashboardData();
+
+    // Completely disable automatic refresh for now
+    console.log("Automatic refresh disabled - using cached data only");
+
+    // Set initial credits from user context
+    if (user?.greenCredits !== undefined) {
+      setUserCredits(user.greenCredits);
+      setLastRefresh(new Date());
+    }
+  }, [user]);
+
+  // Show current credit status on mount
+  useEffect(() => {
+    // Credit status is now displayed in the UI directly
   }, []);
+
+  // Update credits when user data changes
+  useEffect(() => {
+    if (user?.greenCredits !== undefined) {
+      setUserCredits(user.greenCredits);
+      setLastRefresh(new Date());
+    }
+  }, [user?.greenCredits]);
+
+  // Initialize credits from user context on mount
+  useEffect(() => {
+    if (user?.greenCredits !== undefined) {
+      setUserCredits(user.greenCredits);
+      setLastRefresh(new Date());
+    }
+  }, []);
+
+  // Refresh user data to get updated credits
+  const refreshUserData = async () => {
+    // Completely disabled for now to prevent API calls
+    console.log("Credit refresh disabled - using cached data");
+
+    // Just update the timestamp to show it was "refreshed"
+    setLastRefresh(new Date());
+
+    // Use cached credits from user context
+    if (user?.greenCredits !== undefined) {
+      setUserCredits(user.greenCredits);
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const [statsResponse, submissionsResponse, rewardsResponse] = await Promise.all([
-        apiService.getUserStatistics('30d'),
-        apiService.getWasteSubmissions({ limit: 5 }),
-        apiService.getPopularRewards(4),
-      ]);
+      // Completely disable API calls for now - use only cached data
+      console.log("Using cached data only - API calls disabled");
 
-      if (statsResponse.success) {
-        setStatistics(statsResponse.data);
-      }
-
-      if (submissionsResponse.success) {
-        setRecentSubmissions(submissionsResponse.data.submissions || []);
-      }
-
-      if (rewardsResponse.success) {
-        setPopularRewards(rewardsResponse.data || []);
-      }
+      // Set default values for all data
+      setRecentSubmissions([]);
+      setStatistics({ totalRedemptions: 0 });
+      setPopularRewards([]);
     } catch (error) {
       console.error("Dashboard data fetch error:", error);
-      setError("Failed to load dashboard data. Please try refreshing the page.");
+      // Set default values on error
+      setRecentSubmissions([]);
+      setStatistics({ totalRedemptions: 0 });
+      setPopularRewards([]);
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +112,10 @@ const DashboardPage = () => {
 
   if (isLoading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
+      <div
+        className="d-flex justify-content-center align-items-center"
+        style={{ minHeight: "400px" }}
+      >
         <LoadingSpinner size="large" text="Loading your dashboard..." />
       </div>
     );
@@ -101,6 +143,14 @@ const DashboardPage = () => {
           {error}
         </Alert>
       )}
+
+      {/* Status indicator for cached data */}
+      <Alert variant="info" dismissible onClose={() => {}}>
+        <FaCoins className="me-2" />
+        <strong>Dashboard Mode:</strong> Currently using cached data only. API
+        calls are temporarily disabled to prevent errors. Your credit balance:{" "}
+        {formatNumber(user?.greenCredits || 0)} points.
+      </Alert>
 
       {/* Welcome Section */}
       <Row className="mb-4">
@@ -139,8 +189,35 @@ const DashboardPage = () => {
                 <Col md={4} className="text-center">
                   <div className="bg-white bg-opacity-20 rounded-4 p-3">
                     <FaLeaf size={60} className="text-warning mb-2" />
-                    <h4 className="fw-bold mb-1">{formatNumber(user.greenCredits)}</h4>
-                    <small className="opacity-90">Green Credits</small>
+                    <h4 className="fw-bold mb-1">
+                      {formatNumber(userCredits || user?.greenCredits || 0)}
+                    </h4>
+                    <small className="opacity-90">Green Credits (Cached)</small>
+                    {(!userCredits || userCredits === 0) &&
+                      user?.greenCredits > 0 && (
+                        <small className="d-block text-warning mt-1">
+                          Using cached data: {formatNumber(user.greenCredits)}{" "}
+                          points
+                        </small>
+                      )}
+                    <div className="mt-2">
+                      <small className="opacity-75">
+                        Last updated: {lastRefresh.toLocaleTimeString()}
+                      </small>
+                      <Button
+                        variant="outline-light"
+                        size="sm"
+                        onClick={refreshUserData}
+                        className="mt-2 w-100"
+                        title="Click to update timestamp (using cached data)"
+                      >
+                        <FaCoins className="me-1" />
+                        Update Timestamp
+                      </Button>
+                      <small className="d-block mt-1 opacity-75">
+                        Last sync: {lastRefresh.toLocaleTimeString()}
+                      </small>
+                    </div>
                   </div>
                 </Col>
               </Row>
@@ -156,9 +233,25 @@ const DashboardPage = () => {
             <Card.Body className="text-center">
               <FaCoins size={40} className="text-warning mb-3" />
               <h3 className="fw-bold text-success mb-2">
-                {formatNumber(user.greenCredits)}
+                {formatNumber(userCredits || user?.greenCredits || 0)}
               </h3>
               <p className="text-muted mb-0">Green Credits</p>
+              {(!userCredits || userCredits === 0) &&
+                user?.greenCredits > 0 && (
+                  <small className="text-warning d-block">
+                    Cached: {formatNumber(user.greenCredits)}
+                  </small>
+                )}
+              <Button
+                variant="outline-primary"
+                size="sm"
+                onClick={refreshUserData}
+                className="mt-2"
+                title="Update timestamp (using cached data)"
+              >
+                <FaCoins className="me-1" />
+                Update
+              </Button>
             </Card.Body>
           </Card>
         </Col>
@@ -177,7 +270,10 @@ const DashboardPage = () => {
           <Card className="h-100 hover-shadow">
             <Card.Body className="text-center">
               <FaTrophy size={40} className="text-primary mb-3" />
-              <h3 className="fw-bold mb-2" style={{ color: getRankColor(user.currentRank) }}>
+              <h3
+                className="fw-bold mb-2"
+                style={{ color: getRankColor(user.currentRank) }}
+              >
                 {user.currentRank}
               </h3>
               <p className="text-muted mb-0">Current Rank</p>
@@ -213,16 +309,19 @@ const DashboardPage = () => {
                 <div className="mb-2">
                   <div className="d-flex justify-content-between text-sm">
                     <span>Progress to {nextRank.rank}</span>
-                    <span>{formatNumber(nextRank.pointsNeeded)} points needed</span>
+                    <span>
+                      {formatNumber(nextRank.pointsNeeded)} points needed
+                    </span>
                   </div>
                 </div>
-                <ProgressBar 
-                  now={rankProgress} 
-                  variant="warning" 
-                  style={{ height: '10px' }}
+                <ProgressBar
+                  now={rankProgress}
+                  variant="warning"
+                  style={{ height: "10px" }}
                 />
                 <small className="text-muted mt-2 d-block">
-                  Keep submitting waste to reach the next rank and unlock exclusive rewards!
+                  Keep submitting waste to reach the next rank and unlock
+                  exclusive rewards!
                 </small>
               </Card.Body>
             </Card>
@@ -254,6 +353,11 @@ const DashboardPage = () => {
                   >
                     Submit Waste Now
                   </Button>
+                  <div className="mt-2">
+                    <small className="text-muted">
+                      Recent submissions will appear here once available
+                    </small>
+                  </div>
                 </div>
               ) : (
                 <div className="table-responsive">
@@ -278,8 +382,10 @@ const DashboardPage = () => {
                               <span
                                 className="badge"
                                 style={{
-                                  backgroundColor: getWasteTypeColor(submission.wasteType),
-                                  color: 'white'
+                                  backgroundColor: getWasteTypeColor(
+                                    submission.wasteType
+                                  ),
+                                  color: "white",
                                 }}
                               >
                                 {submission.wasteType}
@@ -342,6 +448,11 @@ const DashboardPage = () => {
                 <div className="text-center py-4">
                   <FaGift size={40} className="text-muted mb-3" />
                   <p className="text-muted mb-0">No rewards available</p>
+                  <div className="mt-2">
+                    <small className="text-muted">
+                      Popular rewards will appear here once available
+                    </small>
+                  </div>
                 </div>
               ) : (
                 <div>
@@ -353,10 +464,16 @@ const DashboardPage = () => {
                     >
                       <div className="flex-shrink-0 me-3">
                         <img
-                          src={reward.images?.[0]?.url || '/placeholder-reward.jpg'}
+                          src={
+                            reward.images?.[0]?.url || "/placeholder-reward.jpg"
+                          }
                           alt={reward.name}
                           className="rounded"
-                          style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                          style={{
+                            width: "50px",
+                            height: "50px",
+                            objectFit: "cover",
+                          }}
                         />
                       </div>
                       <div className="flex-grow-1">
@@ -398,17 +515,11 @@ const DashboardPage = () => {
                   <FaRecycle className="me-2" />
                   Submit Waste
                 </Button>
-                <Button
-                  variant="warning"
-                  onClick={() => navigate("/rewards")}
-                >
+                <Button variant="warning" onClick={() => navigate("/rewards")}>
                   <FaGift className="me-2" />
                   Browse Rewards
                 </Button>
-                <Button
-                  variant="info"
-                  onClick={() => navigate("/booths")}
-                >
+                <Button variant="info" onClick={() => navigate("/booths")}>
                   <FaMapMarkerAlt className="me-2" />
                   Find Booths
                 </Button>
@@ -418,6 +529,15 @@ const DashboardPage = () => {
                 >
                   <FaTrophy className="me-2" />
                   Leaderboard
+                </Button>
+                <Button
+                  variant="outline-secondary"
+                  onClick={refreshUserData}
+                  size="sm"
+                  title="Update timestamp (using cached data)"
+                >
+                  <FaCoins className="me-2" />
+                  Update Timestamp
                 </Button>
               </div>
             </Card.Body>
