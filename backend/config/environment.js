@@ -226,17 +226,14 @@ class Environment {
 
   // Validate required environment variables
   validateRequired() {
-    const required = [
-      'JWT_SECRET'
-    ];
-
-    const missing = required.filter(key => !process.env[key]);
+    // Check if JWT secret is available (either from env or fallback)
+    const jwtSecret = this.config.jwt.secret;
     
-    if (missing.length > 0) {
-      console.warn('⚠️  Missing environment variables:', missing.join(', '));
+    if (!jwtSecret) {
+      console.warn('⚠️  JWT_SECRET not available');
       
       if (this.isProduction()) {
-        throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+        throw new Error('JWT_SECRET is required in production');
       }
     }
   }

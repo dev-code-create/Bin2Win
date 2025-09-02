@@ -38,6 +38,7 @@ const DashboardPage = () => {
   const [error, setError] = useState(null);
   const [userCredits, setUserCredits] = useState(user?.greenCredits || 0);
   const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [isRefreshingCredits, setIsRefreshingCredits] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -75,15 +76,46 @@ const DashboardPage = () => {
 
   // Refresh user data to get updated credits
   const refreshUserData = async () => {
-    // Completely disabled for now to prevent API calls
-    console.log("Credit refresh disabled - using cached data");
+    try {
+      setIsRefreshingCredits(true);
+      console.log("Refreshing user credits from server...");
 
-    // Just update the timestamp to show it was "refreshed"
-    setLastRefresh(new Date());
+      // Check if user is authenticated
+      if (!user || !localStorage.getItem("authToken")) {
+        console.error("No user or auth token found");
+        return;
+      }
 
-    // Use cached credits from user context
-    if (user?.greenCredits !== undefined) {
-      setUserCredits(user.greenCredits);
+      // Try to get updated user data from the backend
+      const response = await apiService.getCurrentUser();
+      if (response.success && response.data) {
+        const newCredits = response.data.greenCredits || 0;
+        const oldCredits = userCredits;
+
+        setUserCredits(newCredits);
+        setLastRefresh(new Date());
+
+        console.log(`Credits updated: ${oldCredits} → ${newCredits}`);
+
+        // Show success message if credits changed
+        if (newCredits !== oldCredits) {
+          console.log(`Credits changed by ${newCredits - oldCredits} points`);
+        } else {
+          console.log("Credits unchanged");
+        }
+      } else {
+        console.error("Failed to get user data:", response);
+      }
+    } catch (error) {
+      console.error("Failed to refresh user data:", error);
+
+      // Handle specific authentication errors
+      if (error.message === "Invalid token" || error.message.includes("401")) {
+        console.error("Authentication error - redirecting to login");
+        navigate("/login");
+      }
+    } finally {
+      setIsRefreshingCredits(false);
     }
   };
 
@@ -147,9 +179,10 @@ const DashboardPage = () => {
       {/* Status indicator for cached data */}
       <Alert variant="info" dismissible onClose={() => {}}>
         <FaCoins className="me-2" />
-        <strong>Dashboard Mode:</strong> Currently using cached data only. API
-        calls are temporarily disabled to prevent errors. Your credit balance:{" "}
-        {formatNumber(user?.greenCredits || 0)} points.
+        <strong>Dashboard Mode:</strong> Using cached data by default. Click
+        "Refresh Credits" buttons to get the latest balance from the server.
+        Your current credit balance: {formatNumber(user?.greenCredits || 0)}{" "}
+        points.
       </Alert>
 
       {/* Welcome Section */}
@@ -190,9 +223,23 @@ const DashboardPage = () => {
                   <div className="bg-white bg-opacity-20 rounded-4 p-3">
                     <FaLeaf size={60} className="text-warning mb-2" />
                     <h4 className="fw-bold mb-1">
-                      {formatNumber(userCredits || user?.greenCredits || 0)}
+                      {isRefreshingCredits ? (
+                        <span className="d-flex align-items-center justify-content-center">
+                          <div
+                            className="spinner-border spinner-border-sm me-2"
+                            role="status"
+                          >
+                            <span className="visually-hidden">Loading...</span>
+                          </div>
+                          {formatNumber(userCredits || user?.greenCredits || 0)}
+                        </span>
+                      ) : (
+                        formatNumber(userCredits || user?.greenCredits || 0)
+                      )}
                     </h4>
-                    <small className="opacity-90">Green Credits (Cached)</small>
+                    <small className="opacity-90">
+                      {isRefreshingCredits ? "Updating..." : "Green Credits"}
+                    </small>
                     {(!userCredits || userCredits === 0) &&
                       user?.greenCredits > 0 && (
                         <small className="d-block text-warning mt-1">
@@ -209,10 +256,13 @@ const DashboardPage = () => {
                         size="sm"
                         onClick={refreshUserData}
                         className="mt-2 w-100"
-                        title="Click to update timestamp (using cached data)"
+                        disabled={isRefreshingCredits}
+                        title="Click to refresh your credit balance from the server"
                       >
                         <FaCoins className="me-1" />
-                        Update Timestamp
+                        {isRefreshingCredits
+                          ? "Refreshing..."
+                          : "Refresh Credits"}
                       </Button>
                       <small className="d-block mt-1 opacity-75">
                         Last sync: {lastRefresh.toLocaleTimeString()}
@@ -247,10 +297,11 @@ const DashboardPage = () => {
                 size="sm"
                 onClick={refreshUserData}
                 className="mt-2"
-                title="Update timestamp (using cached data)"
+                disabled={isRefreshingCredits}
+                title="Refresh credits from server"
               >
                 <FaCoins className="me-1" />
-                Update
+                {isRefreshingCredits ? "Refreshing..." : "Refresh"}
               </Button>
             </Card.Body>
           </Card>
@@ -534,10 +585,11 @@ const DashboardPage = () => {
                   variant="outline-secondary"
                   onClick={refreshUserData}
                   size="sm"
-                  title="Update timestamp (using cached data)"
+                  disabled={isRefreshingCredits}
+                  title="Refresh credits from server"
                 >
                   <FaCoins className="me-2" />
-                  Update Timestamp
+                  {isRefreshingCredits ? "Refreshing..." : "Refresh Credits"}
                 </Button>
               </div>
             </Card.Body>

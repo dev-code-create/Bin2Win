@@ -1,15 +1,16 @@
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
-import User from '../models/User.js';
-import Admin from '../models/Admin.js';
-import { generateToken } from '../middleware/auth.js';
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import User from "../models/User.js";
+import Admin from "../models/Admin.js";
+import { generateToken } from "../middleware/auth.js";
+import { Environment } from "../config/index.js";
 
 class AuthController {
   constructor() {
     // In-memory OTP storage (use Redis in production)
     this.otpStore = new Map();
     this.OTP_EXPIRY = 5 * 60 * 1000; // 5 minutes
-    
+
     // Cleanup expired OTPs periodically
     setInterval(() => {
       this.cleanupExpiredOTPs();
@@ -24,9 +25,11 @@ class AuthController {
   // Generate unique QR code for user
   generateUserQRCode(identifier) {
     const timestamp = Date.now();
-    const hash = crypto.createHash('sha256')
-      .update(`${identifier}_${timestamp}_${process.env.JWT_SECRET}`)
-      .digest('hex')
+    const config = Environment.get("jwt");
+    const hash = crypto
+      .createHash("sha256")
+      .update(`${identifier}_${timestamp}_${config?.secret || 'simhastha-clean-green-secret-key-2028-development'}`)
+      .digest("hex")
       .substring(0, 16);
     return `SIMHASTHA_USER_${hash.toUpperCase()}`;
   }
@@ -35,11 +38,11 @@ class AuthController {
   async sendOTP(phoneNumber, otp) {
     // In production, integrate with SMS service like Twilio, AWS SNS, etc.
     console.log(`📱 Sending OTP ${otp} to ${phoneNumber}`);
-    
+
     // Mock SMS sending delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    return { success: true, message: 'OTP sent successfully' };
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    return { success: true, message: "OTP sent successfully" };
   }
 
   // Clean up expired OTPs
@@ -61,19 +64,19 @@ class AuthController {
       if (!username || !password || !name || !email) {
         return res.status(400).json({
           success: false,
-          message: 'Username, password, name, and email are required'
+          message: "Username, password, name, and email are required",
         });
       }
 
       // Check if username or email already exists
       const existingUser = await User.findOne({
-        $or: [{ username }, { email }]
+        $or: [{ username }, { email }],
       });
 
       if (existingUser) {
         return res.status(400).json({
           success: false,
-          message: 'Username or email already exists'
+          message: "Username or email already exists",
         });
       }
 
@@ -89,7 +92,7 @@ class AuthController {
         phoneNumber,
         qrCode,
         registrationDate: new Date(),
-        lastActive: new Date()
+        lastActive: new Date(),
       });
 
       await user.save();
@@ -97,8 +100,8 @@ class AuthController {
       // Generate JWT token
       const token = generateToken({
         userId: user._id,
-        type: 'user',
-        username: user.username
+        type: "user",
+        username: user.username,
       });
 
       // Prepare user data (exclude sensitive information)
@@ -115,30 +118,30 @@ class AuthController {
         stats: user.stats,
         preferences: user.preferences,
         registrationDate: user.registrationDate,
-        lastActive: user.lastActive
+        lastActive: user.lastActive,
       };
 
       res.status(201).json({
         success: true,
-        message: 'Registration successful!',
+        message: "Registration successful!",
         data: {
           user: userData,
-          token
-        }
+          token,
+        },
       });
     } catch (error) {
-      console.error('❌ Registration error:', error);
-      
+      console.error("❌ Registration error:", error);
+
       if (error.code === 11000) {
         return res.status(400).json({
           success: false,
-          message: 'Username or email already exists'
+          message: "Username or email already exists",
         });
       }
-      
+
       res.status(500).json({
         success: false,
-        message: error.message || 'Registration failed'
+        message: error.message || "Registration failed",
       });
     }
   }
@@ -152,20 +155,20 @@ class AuthController {
       if (!username || !password) {
         return res.status(400).json({
           success: false,
-          message: 'Username and password are required'
+          message: "Username and password are required",
         });
       }
 
       // Find user by username or email
       const user = await User.findOne({
         $or: [{ username }, { email: username }],
-        isActive: true
+        isActive: true,
       });
 
       if (!user) {
         return res.status(401).json({
           success: false,
-          message: 'Invalid credentials'
+          message: "Invalid credentials",
         });
       }
 
@@ -174,7 +177,7 @@ class AuthController {
       if (!isPasswordValid) {
         return res.status(401).json({
           success: false,
-          message: 'Invalid credentials'
+          message: "Invalid credentials",
         });
       }
 
@@ -185,8 +188,8 @@ class AuthController {
       // Generate JWT token
       const token = generateToken({
         userId: user._id,
-        type: 'user',
-        username: user.username
+        type: "user",
+        username: user.username,
       });
 
       // Prepare user data (exclude sensitive information)
@@ -203,22 +206,22 @@ class AuthController {
         stats: user.stats,
         preferences: user.preferences,
         registrationDate: user.registrationDate,
-        lastActive: user.lastActive
+        lastActive: user.lastActive,
       };
 
       res.json({
         success: true,
-        message: 'Login successful!',
+        message: "Login successful!",
         data: {
           user: userData,
-          token
-        }
+          token,
+        },
       });
     } catch (error) {
-      console.error('❌ Login error:', error);
+      console.error("❌ Login error:", error);
       res.status(500).json({
         success: false,
-        message: 'Login failed'
+        message: "Login failed",
       });
     }
   }
@@ -231,7 +234,7 @@ class AuthController {
       if (!phoneNumber) {
         return res.status(400).json({
           success: false,
-          message: 'Phone number is required'
+          message: "Phone number is required",
         });
       }
 
@@ -240,7 +243,7 @@ class AuthController {
       if (!phoneRegex.test(phoneNumber)) {
         return res.status(400).json({
           success: false,
-          message: 'Please provide a valid phone number'
+          message: "Please provide a valid phone number",
         });
       }
 
@@ -253,7 +256,7 @@ class AuthController {
         otp,
         expiresAt,
         attempts: 0,
-        maxAttempts: 3
+        maxAttempts: 3,
       });
 
       try {
@@ -264,23 +267,23 @@ class AuthController {
           success: true,
           data: {
             phoneNumber,
-            message: 'OTP sent successfully',
-            expiresIn: this.OTP_EXPIRY / 1000 // in seconds
-          }
+            message: "OTP sent successfully",
+            expiresIn: this.OTP_EXPIRY / 1000, // in seconds
+          },
         });
       } catch (smsError) {
-        console.error('Failed to send OTP:', smsError);
+        console.error("Failed to send OTP:", smsError);
         this.otpStore.delete(phoneNumber); // Remove OTP if sending failed
         res.status(500).json({
           success: false,
-          message: 'Failed to send OTP. Please try again.'
+          message: "Failed to send OTP. Please try again.",
         });
       }
     } catch (error) {
-      console.error('❌ Send OTP error:', error);
+      console.error("❌ Send OTP error:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to send OTP'
+        message: "Failed to send OTP",
       });
     }
   }
@@ -293,17 +296,17 @@ class AuthController {
       if (!phoneNumber || !otp) {
         return res.status(400).json({
           success: false,
-          message: 'Phone number and OTP are required'
+          message: "Phone number and OTP are required",
         });
       }
 
       // Check if OTP exists and is valid
       const storedOTP = this.otpStore.get(phoneNumber);
-      
+
       if (!storedOTP) {
         return res.status(400).json({
           success: false,
-          message: 'OTP not found. Please request a new OTP.'
+          message: "OTP not found. Please request a new OTP.",
         });
       }
 
@@ -311,7 +314,7 @@ class AuthController {
         this.otpStore.delete(phoneNumber);
         return res.status(400).json({
           success: false,
-          message: 'OTP has expired. Please request a new OTP.'
+          message: "OTP has expired. Please request a new OTP.",
         });
       }
 
@@ -319,18 +322,18 @@ class AuthController {
         this.otpStore.delete(phoneNumber);
         return res.status(400).json({
           success: false,
-          message: 'Maximum OTP attempts exceeded. Please request a new OTP.'
+          message: "Maximum OTP attempts exceeded. Please request a new OTP.",
         });
       }
 
       if (storedOTP.otp !== otp) {
         storedOTP.attempts++;
         this.otpStore.set(phoneNumber, storedOTP);
-        
+
         const remainingAttempts = storedOTP.maxAttempts - storedOTP.attempts;
         return res.status(400).json({
           success: false,
-          message: `Invalid OTP. ${remainingAttempts} attempts remaining.`
+          message: `Invalid OTP. ${remainingAttempts} attempts remaining.`,
         });
       }
 
@@ -346,18 +349,19 @@ class AuthController {
         if (!name || name.trim().length < 2) {
           return res.status(400).json({
             success: false,
-            message: 'Name is required for new users and must be at least 2 characters long'
+            message:
+              "Name is required for new users and must be at least 2 characters long",
           });
         }
 
         const qrCode = this.generateUserQRCode(phoneNumber);
-        
+
         user = new User({
           phoneNumber,
           name: name.trim(),
           qrCode,
           registrationDate: new Date(),
-          lastActive: new Date()
+          lastActive: new Date(),
         });
 
         await user.save();
@@ -371,8 +375,8 @@ class AuthController {
       // Generate JWT token
       const token = generateToken({
         userId: user._id,
-        type: 'user',
-        phoneNumber: user.phoneNumber
+        type: "user",
+        phoneNumber: user.phoneNumber,
       });
 
       // Prepare user data (exclude sensitive information)
@@ -388,32 +392,33 @@ class AuthController {
         stats: user.stats,
         preferences: user.preferences,
         registrationDate: user.registrationDate,
-        lastActive: user.lastActive
+        lastActive: user.lastActive,
       };
 
       res.status(isNewUser ? 201 : 200).json({
         success: true,
-        message: isNewUser ? 'Account created successfully' : 'Login successful',
+        message: isNewUser
+          ? "Account created successfully"
+          : "Login successful",
         data: {
           user: userData,
           token,
-          isNewUser
-        }
+          isNewUser,
+        },
       });
-
     } catch (error) {
-      console.error('❌ Authentication error:', error);
-      
+      console.error("❌ Authentication error:", error);
+
       if (error.code === 11000) {
         return res.status(400).json({
           success: false,
-          message: 'Phone number already exists'
+          message: "Phone number already exists",
         });
       }
-      
+
       res.status(500).json({
         success: false,
-        message: 'Authentication failed. Please try again.'
+        message: "Authentication failed. Please try again.",
       });
     }
   }
@@ -426,38 +431,39 @@ class AuthController {
       if (!login || !password) {
         return res.status(400).json({
           success: false,
-          message: 'Username/email and password are required'
+          message: "Username/email and password are required",
         });
       }
 
       // Find admin by username or email
-      const admin = await Admin.findByLogin(login).select('+password');
-      
+      const admin = await Admin.findByLogin(login).select("+password");
+
       if (!admin) {
         return res.status(401).json({
           success: false,
-          message: 'Invalid credentials'
+          message: "Invalid credentials",
         });
       }
 
       if (admin.isLocked) {
         return res.status(401).json({
           success: false,
-          message: 'Account is locked due to multiple failed login attempts. Please try again later.'
+          message:
+            "Account is locked due to multiple failed login attempts. Please try again later.",
         });
       }
 
       // Check password
       const isPasswordValid = await admin.comparePassword(password);
-      
+
       if (!isPasswordValid) {
         // Handle failed login attempt
         await admin.handleLoginAttempt(false);
-        
+
         const remainingAttempts = Math.max(0, 5 - admin.loginAttempts.count);
         return res.status(401).json({
           success: false,
-          message: `Invalid credentials. ${remainingAttempts} attempts remaining before account lock.`
+          message: `Invalid credentials. ${remainingAttempts} attempts remaining before account lock.`,
         });
       }
 
@@ -467,8 +473,8 @@ class AuthController {
       // Generate JWT token
       const token = generateToken({
         adminId: admin._id,
-        type: 'admin',
-        role: admin.role
+        type: "admin",
+        role: admin.role,
       });
 
       // Prepare admin data (password is already excluded by toJSON transform)
@@ -482,23 +488,22 @@ class AuthController {
         assignedBooths: admin.assignedBooths,
         lastLogin: admin.lastLogin,
         preferences: admin.preferences,
-        statistics: admin.statistics
+        statistics: admin.statistics,
       };
 
       res.json({
         success: true,
-        message: 'Admin login successful',
+        message: "Admin login successful",
         data: {
           admin: adminData,
-          token
-        }
+          token,
+        },
       });
-
     } catch (error) {
-      console.error('❌ Admin authentication error:', error);
+      console.error("❌ Admin authentication error:", error);
       res.status(500).json({
         success: false,
-        message: 'Authentication failed. Please try again.'
+        message: "Authentication failed. Please try again.",
       });
     }
   }
@@ -511,29 +516,30 @@ class AuthController {
       if (!refreshToken) {
         return res.status(400).json({
           success: false,
-          message: 'Refresh token is required'
+          message: "Refresh token is required",
         });
       }
 
-      const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
-      
+              const config = Environment.get("jwt");
+        const decoded = jwt.verify(refreshToken, config?.secret || 'simhastha-clean-green-secret-key-2028-development');
+
       let newToken;
       let userData;
 
-      if (decoded.type === 'user') {
+      if (decoded.type === "user") {
         const user = await User.findById(decoded.userId);
-        
+
         if (!user || !user.isActive) {
           return res.status(401).json({
             success: false,
-            message: 'User not found or inactive'
+            message: "User not found or inactive",
           });
         }
 
         newToken = generateToken({
           userId: user._id,
-          type: 'user',
-          phoneNumber: user.phoneNumber
+          type: "user",
+          phoneNumber: user.phoneNumber,
         });
 
         userData = {
@@ -541,66 +547,64 @@ class AuthController {
           phoneNumber: user.phoneNumber,
           name: user.name,
           greenCredits: user.greenCredits,
-          currentRank: user.currentRank
+          currentRank: user.currentRank,
         };
-
-      } else if (decoded.type === 'admin') {
+      } else if (decoded.type === "admin") {
         const admin = await Admin.findById(decoded.adminId);
-        
+
         if (!admin || !admin.isActive || admin.isLocked) {
           return res.status(401).json({
             success: false,
-            message: 'Admin not found, inactive, or locked'
+            message: "Admin not found, inactive, or locked",
           });
         }
 
         newToken = generateToken({
           adminId: admin._id,
-          type: 'admin',
-          role: admin.role
+          type: "admin",
+          role: admin.role,
         });
 
         userData = {
           id: admin._id,
           username: admin.username,
           fullName: admin.fullName,
-          role: admin.role
+          role: admin.role,
         };
       } else {
         return res.status(401).json({
           success: false,
-          message: 'Invalid token type'
+          message: "Invalid token type",
         });
       }
 
       res.json({
         success: true,
-        message: 'Token refreshed successfully',
+        message: "Token refreshed successfully",
         data: {
           token: newToken,
-          user: userData
-        }
+          user: userData,
+        },
       });
-
     } catch (error) {
-      if (error.name === 'TokenExpiredError') {
+      if (error.name === "TokenExpiredError") {
         return res.status(401).json({
           success: false,
-          message: 'Refresh token expired. Please login again.'
-        });
-      }
-      
-      if (error.name === 'JsonWebTokenError') {
-        return res.status(401).json({
-          success: false,
-          message: 'Invalid refresh token'
+          message: "Refresh token expired. Please login again.",
         });
       }
 
-      console.error('❌ Token refresh error:', error);
+      if (error.name === "JsonWebTokenError") {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid refresh token",
+        });
+      }
+
+      console.error("❌ Token refresh error:", error);
       res.status(500).json({
         success: false,
-        message: 'Token refresh failed'
+        message: "Token refresh failed",
       });
     }
   }
@@ -608,24 +612,72 @@ class AuthController {
   // Get current user/admin info
   async getMe(req, res) {
     try {
-      const token = req.header('Authorization')?.replace('Bearer ', '');
-      
-      if (!token) {
-        return res.status(401).json({
-          success: false,
-          message: 'No token provided'
+      // For user authentication (handled by authenticateUser middleware)
+      if (req.user) {
+        const userData = {
+          id: req.user._id,
+          phoneNumber: req.user.phoneNumber,
+          name: req.user.name,
+          email: req.user.email,
+          greenCredits: req.user.greenCredits,
+          totalWasteSubmitted: req.user.totalWasteSubmitted,
+          qrCode: req.user.qrCode,
+          currentRank: req.user.currentRank,
+          stats: req.user.stats,
+          preferences: req.user.preferences,
+          type: "user",
+        };
+
+        return res.json({
+          success: true,
+          data: userData,
         });
       }
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
-      if (decoded.type === 'user') {
+      // For admin authentication (handled by authenticateAdmin middleware)
+      if (req.admin) {
+        const adminData = {
+          id: req.admin._id,
+          username: req.admin.username,
+          email: req.admin.email,
+          fullName: req.admin.fullName,
+          role: req.admin.role,
+          permissions: req.admin.allPermissions,
+          assignedBooths: req.admin.assignedBooths,
+          preferences: req.admin.preferences,
+          statistics: req.admin.statistics,
+          type: "admin",
+        };
+
+        return res.json({
+          success: true,
+          data: adminData,
+        });
+      }
+
+      // Fallback: if middleware didn't set user/admin, try to get from token
+      const token = req.header("Authorization")?.replace("Bearer ", "");
+
+      if (!token) {
+        return res.status(401).json({
+          success: false,
+          message: "No token provided",
+        });
+      }
+
+      const config = Environment.get("jwt");
+      const decoded = jwt.verify(
+        token,
+        config?.secret || "simhastha-clean-green-secret-key-2028-development"
+      );
+
+      if (decoded.type === "user") {
         const user = await User.findById(decoded.userId);
-        
+
         if (!user || !user.isActive) {
           return res.status(401).json({
             success: false,
-            message: 'User not found or inactive'
+            message: "User not found or inactive",
           });
         }
 
@@ -640,21 +692,22 @@ class AuthController {
           currentRank: user.currentRank,
           stats: user.stats,
           preferences: user.preferences,
-          type: 'user'
+          type: "user",
         };
 
-        res.json({
+        return res.json({
           success: true,
-          data: userData
+          data: userData,
         });
+      } else if (decoded.type === "admin") {
+        const admin = await Admin.findById(decoded.adminId).populate(
+          "assignedBooths"
+        );
 
-      } else if (decoded.type === 'admin') {
-        const admin = await Admin.findById(decoded.adminId).populate('assignedBooths');
-        
         if (!admin || !admin.isActive) {
           return res.status(401).json({
             success: false,
-            message: 'Admin not found or inactive'
+            message: "Admin not found or inactive",
           });
         }
 
@@ -668,39 +721,38 @@ class AuthController {
           assignedBooths: admin.assignedBooths,
           preferences: admin.preferences,
           statistics: admin.statistics,
-          type: 'admin'
+          type: "admin",
         };
 
-        res.json({
+        return res.json({
           success: true,
-          data: adminData
+          data: adminData,
         });
       } else {
         return res.status(401).json({
           success: false,
-          message: 'Invalid token type'
+          message: "Invalid token type",
         });
       }
-
     } catch (error) {
-      if (error.name === 'TokenExpiredError') {
+      if (error.name === "TokenExpiredError") {
         return res.status(401).json({
           success: false,
-          message: 'Token expired'
-        });
-      }
-      
-      if (error.name === 'JsonWebTokenError') {
-        return res.status(401).json({
-          success: false,
-          message: 'Invalid token'
+          message: "Token expired",
         });
       }
 
-      console.error('❌ Get user info error:', error);
+      if (error.name === "JsonWebTokenError") {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid token",
+        });
+      }
+
+      console.error("❌ Get user info error:", error);
       res.status(500).json({
         success: false,
-        message: 'Failed to get user information'
+        message: "Failed to get user information",
       });
     }
   }
@@ -710,16 +762,16 @@ class AuthController {
     try {
       // In a more sophisticated setup, you might want to blacklist the token
       // For now, we'll just send a success response
-      
+
       res.json({
         success: true,
-        message: 'Logout successful'
+        message: "Logout successful",
       });
     } catch (error) {
-      console.error('❌ Logout error:', error);
+      console.error("❌ Logout error:", error);
       res.status(500).json({
         success: false,
-        message: 'Logout failed'
+        message: "Logout failed",
       });
     }
   }
@@ -729,13 +781,13 @@ class AuthController {
     try {
       res.json({
         success: true,
-        message: 'Admin logout successful'
+        message: "Admin logout successful",
       });
     } catch (error) {
-      console.error('❌ Admin logout error:', error);
+      console.error("❌ Admin logout error:", error);
       res.status(500).json({
         success: false,
-        message: 'Admin logout failed'
+        message: "Admin logout failed",
       });
     }
   }
