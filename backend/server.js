@@ -19,6 +19,7 @@ import adminRoutes from "./routes/admin.js";
 // Import middleware
 import { errorHandler } from "./middleware/errorHandler.js";
 import { rateLimiter, clearAllRateLimits } from "./middleware/rateLimiter.js";
+import { ensureDbConnection } from "./middleware/dbConnectionGuard.js";
 
 // ES6 module setup
 const __filename = fileURLToPath(import.meta.url);
@@ -30,6 +31,24 @@ async function startServer() {
 
     // Initialize configuration and database
     await initializeConfig();
+
+    // Confirm database connection status
+    if (Database.isConnected) {
+      console.log("✅ Database connection confirmed and ready");
+    } else {
+      console.log("⚠️  Database not connected, but continuing...");
+    }
+
+    // Add a small delay to ensure database connection is fully established
+    console.log("⏳ Waiting for database connection to stabilize...");
+    await new Promise((resolve) => setTimeout(resolve, 3000)); // Wait 3 seconds
+
+    // Final database readiness check
+    if (Database.isReady()) {
+      console.log("✅ Database is fully ready for operations");
+    } else {
+      console.log("⚠️  Database may not be fully ready, but continuing...");
+    }
 
     // Clear any existing rate limits on startup (for development)
     clearAllRateLimits();
@@ -70,13 +89,13 @@ async function startServer() {
       });
     });
 
-    // API Routes
-    app.use("/api/auth", authRoutes);
-    app.use("/api/user", userRoutes);
-    app.use("/api/waste", wasteRoutes);
-    app.use("/api/booths", boothRoutes);
-    app.use("/api/rewards", rewardRoutes);
-    app.use("/api/admin", adminRoutes);
+    // API Routes - Apply database connection guard to prevent operations before connection is ready
+    app.use("/api/auth", ensureDbConnection, authRoutes);
+    app.use("/api/user", ensureDbConnection, userRoutes);
+    app.use("/api/waste", ensureDbConnection, wasteRoutes);
+    app.use("/api/booths", ensureDbConnection, boothRoutes);
+    app.use("/api/rewards", ensureDbConnection, rewardRoutes);
+    app.use("/api/admin", ensureDbConnection, adminRoutes);
 
     // Global error handler
     app.use(errorHandler);
