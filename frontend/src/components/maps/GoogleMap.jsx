@@ -1,9 +1,9 @@
 import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { GoogleMap, LoadScript, Marker, InfoWindow, Circle } from '@react-google-maps/api';
-import { Card, Button, Alert, Spinner, Badge } from 'react-bootstrap';
-import { FaMapMarkerAlt, FaDirections, FaPhone, FaClock, FaWeightHanging } from 'react-icons/fa';
+import { Card, Button, Alert, Spinner, Badge, Tooltip } from 'react-bootstrap';
+import { FaMapMarkerAlt, FaDirections, FaPhone, FaClock, FaWeightHanging, FaCrosshairs, FaLayerGroup } from 'react-icons/fa';
 
-const libraries = ['places'];
+const libraries = ['places', 'geometry'];
 
 const mapContainerStyle = {
   width: '100%',
@@ -33,15 +33,19 @@ const GoogleMapComponent = ({
   const [selectedMarkerBooth, setSelectedMarkerBooth] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [loadError, setLoadError] = useState(null);
+  const [mapType, setMapType] = useState('roadmap');
+  const [showTraffic, setShowTraffic] = useState(false);
+  const [showTransit, setShowTransit] = useState(false);
+  const [isClusteringEnabled, setIsClusteringEnabled] = useState(true);
   const mapRef = useRef(null);
 
   const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 
-  // Map options
+  // Enhanced map options
   const mapOptions = {
     disableDefaultUI: false,
     zoomControl: true,
-    streetViewControl: false,
+    streetViewControl: true,
     mapTypeControl: true,
     fullscreenControl: true,
     clickableIcons: false,
@@ -52,7 +56,15 @@ const GoogleMapComponent = ({
         elementType: 'labels',
         stylers: [{ visibility: 'off' }],
       },
+      {
+        featureType: 'transit',
+        elementType: 'labels',
+        stylers: [{ visibility: 'off' }],
+      },
     ],
+    mapTypeId: mapType,
+    traffic: showTraffic,
+    transit: showTransit,
   };
 
   // Update map container style based on height prop
@@ -69,12 +81,13 @@ const GoogleMapComponent = ({
 
   useEffect(() => {
     if (selectedBooth && map) {
-      // Pan to selected booth
+      // Pan to selected booth with smooth animation
       const boothPosition = {
         lat: selectedBooth.coordinates?.latitude || defaultCenter.lat,
         lng: selectedBooth.coordinates?.longitude || defaultCenter.lng,
       };
       map.panTo(boothPosition);
+      map.setZoom(16); // Zoom in closer to the selected booth
       setSelectedMarkerBooth(selectedBooth);
     }
   }, [selectedBooth, map]);
@@ -132,6 +145,28 @@ const GoogleMapComponent = ({
     const destination = `${booth.coordinates.latitude},${booth.coordinates.longitude}`;
     const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
     window.open(url, '_blank');
+  };
+
+  const centerOnUserLocation = () => {
+    if (userLocation && map) {
+      map.panTo(userLocation);
+      map.setZoom(15);
+    }
+  };
+
+  const toggleMapType = () => {
+    const types = ['roadmap', 'satellite', 'hybrid', 'terrain'];
+    const currentIndex = types.indexOf(mapType);
+    const nextIndex = (currentIndex + 1) % types.length;
+    setMapType(types[nextIndex]);
+  };
+
+  const toggleTraffic = () => {
+    setShowTraffic(!showTraffic);
+  };
+
+  const toggleTransit = () => {
+    setShowTransit(!showTransit);
   };
 
   const getMarkerIcon = (booth) => {
@@ -260,6 +295,7 @@ const GoogleMapComponent = ({
                 onClick={() => handleMarkerClick(booth)}
                 icon={isLoaded ? getMarkerIcon(booth) : undefined}
                 title={booth.name}
+                animation={selectedBooth?.id === booth.id ? window.google.maps.Animation.BOUNCE : undefined}
               />
             )
           ))}
@@ -270,6 +306,7 @@ const GoogleMapComponent = ({
               position={userLocation}
               icon={isLoaded ? getUserLocationIcon() : undefined}
               title="Your Location"
+              animation={window.google.maps.Animation.DROP}
             />
           )}
 
@@ -311,14 +348,16 @@ const GoogleMapComponent = ({
                   {selectedMarkerBooth.operatingHours && (
                     <div className="d-flex align-items-center text-muted small mb-2">
                       <FaClock className="me-1" />
-                      {selectedMarkerBooth.operatingHours.open} - {selectedMarkerBooth.operatingHours.close}
+                      <span>
+                        {selectedMarkerBooth.operatingHours.open} - {selectedMarkerBooth.operatingHours.close}
+                      </span>
                     </div>
                   )}
 
                   {selectedMarkerBooth.contactNumber && (
                     <div className="d-flex align-items-center text-muted small mb-2">
                       <FaPhone className="me-1" />
-                      {selectedMarkerBooth.contactNumber}
+                      <span>{selectedMarkerBooth.contactNumber}</span>
                     </div>
                   )}
 
@@ -366,42 +405,103 @@ const GoogleMapComponent = ({
         </GoogleMap>
       </LoadScript>
 
-      {/* Map Legend */}
+      {/* Enhanced Map Controls */}
+      <div className="position-absolute" style={{ top: '10px', right: '10px' }}>
+        <div className="d-flex flex-column gap-2">
+          <Button
+            variant="light"
+            size="sm"
+            onClick={centerOnUserLocation}
+            disabled={!userLocation}
+            title="Center on your location"
+            className="shadow-sm"
+          >
+            <FaCrosshairs />
+          </Button>
+          
+          <Button
+            variant="light"
+            size="sm"
+            onClick={toggleMapType}
+            title={`Current: ${mapType.charAt(0).toUpperCase() + mapType.slice(1)}`}
+            className="shadow-sm"
+          >
+            <FaLayerGroup />
+          </Button>
+          
+          <Button
+            variant={showTraffic ? "primary" : "light"}
+            size="sm"
+            onClick={toggleTraffic}
+            title="Toggle traffic"
+            className="shadow-sm"
+          >
+            🚗
+          </Button>
+          
+          <Button
+            variant={showTransit ? "primary" : "light"}
+            size="sm"
+            onClick={toggleTransit}
+            title="Toggle transit lines"
+            className="shadow-sm"
+          >
+            🚌
+          </Button>
+        </div>
+      </div>
+
+      {/* Enhanced Map Legend */}
       <div 
-        className="position-absolute bg-white rounded shadow-sm p-2" 
-        style={{ bottom: '10px', left: '10px', fontSize: '12px' }}
+        className="position-absolute bg-white rounded shadow-sm p-3" 
+        style={{ bottom: '10px', left: '10px', fontSize: '12px', maxWidth: '200px' }}
       >
-        <div className="fw-bold mb-1">Booth Status</div>
+        <div className="fw-bold mb-2">Booth Status</div>
         <div className="d-flex align-items-center mb-1">
           <div 
             className="rounded-circle me-2" 
-            style={{ width: '10px', height: '10px', backgroundColor: '#28a745' }}
+            style={{ width: '12px', height: '12px', backgroundColor: '#28a745' }}
           ></div>
           <span>Open</span>
         </div>
         <div className="d-flex align-items-center mb-1">
           <div 
             className="rounded-circle me-2" 
-            style={{ width: '10px', height: '10px', backgroundColor: '#ffc107' }}
+            style={{ width: '12px', height: '12px', backgroundColor: '#ffc107' }}
           ></div>
           <span>Busy</span>
         </div>
         <div className="d-flex align-items-center mb-1">
           <div 
             className="rounded-circle me-2" 
-            style={{ width: '10px', height: '10px', backgroundColor: '#dc3545' }}
+            style={{ width: '12px', height: '12px', backgroundColor: '#dc3545' }}
           ></div>
           <span>Closed</span>
+        </div>
+        <div className="d-flex align-items-center mb-1">
+          <div 
+            className="rounded-circle me-2" 
+            style={{ width: '12px', height: '12px', backgroundColor: '#6c757d' }}
+          ></div>
+          <span>Maintenance</span>
         </div>
         {showUserLocation && userLocation && (
           <div className="d-flex align-items-center">
             <div 
               className="rounded-circle me-2" 
-              style={{ width: '10px', height: '10px', backgroundColor: '#007bff' }}
+              style={{ width: '12px', height: '12px', backgroundColor: '#007bff' }}
             ></div>
             <span>Your Location</span>
           </div>
         )}
+        
+        <hr className="my-2" />
+        <div className="fw-bold mb-1">Map Controls</div>
+        <div className="small text-muted">
+          • Click markers for details<br/>
+          • Use buttons on right for map options<br/>
+          • Drag to pan, scroll to zoom
+        </div>
       </div>
     </div>
   );

@@ -10,6 +10,8 @@ import {
   Badge,
   ListGroup,
   InputGroup,
+  Dropdown,
+  ButtonGroup,
 } from "react-bootstrap";
 import {
   FaMapMarkerAlt,
@@ -19,9 +21,13 @@ import {
   FaClock,
   FaFilter,
   FaLocationArrow,
+  FaMap,
+  FaList,
+  FaSort,
+  FaRoute,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
-import GoogleMapComponent from "../components/maps/GoogleMap";
+import SimpleMap from "../components/maps/SimpleMap";
 import useGeolocation from "../hooks/useGeolocation";
 import apiService from "../services/api";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -347,7 +353,7 @@ const BoothLocatorPage = () => {
             <Card className="border-0 shadow-sm h-100">
               <Card.Body className="p-0">
                 <div style={{ height: '700px', minHeight: '400px' }}>
-                  <GoogleMapComponent
+                  <SimpleMap
                     booths={filteredBooths}
                     selectedBooth={selectedBooth}
                     onBoothSelect={setSelectedBooth}
